@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+    <meta http-equiv="Cotent-Type" content="application/xhtml+xml; charset=UTF-8" />
+    <meta name="author" content="YAGI Hiroto"/>
+    <meta name="copyright" content="(c) 2006 YAGI Hiroto" />
+    <meta name="reply-to" content="pppiroto+hp@gmail.com"/>
+    <meta name="date" content="2006-10-11T00:00:00+09:00"/>
+    <title>ExcelERD リバースエンジニアリングにより、ER図を作成</title>
+    <link rel="stylesheet" href="./exerd.css" type="text/css">
+</head>
+<body>
+<hr>
+<table class="layout">
+  <tr>
+    <td valign="center"><img src="./img/icon.jpg" border="0"></td>
+    <td><h1>ExcelERD</h1></td>
+  </tr>
+</table>
+
+<hr>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1390100%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11014848%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79810110.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79810110.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1771867%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11350891%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f3390%2f33902629.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f3390%2f33902629.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f4520981%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f12128377%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f8731%2f87311336.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f8731%2f87311336.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1768290%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11347535%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7561%2f75614592.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7561%2f75614592.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f4159592%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11923358%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79811236.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79811236.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1654266%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11246390%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7741%2f77411974.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7741%2f77411974.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1785356%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11363646%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f5340%2f53403897.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f5340%2f53403897.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1697547%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11286940%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79810669.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79810669.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f4162148%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11925451%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f5324%2f53240400.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f5324%2f53240400.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f3987589%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11797717%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f8222%2f82222835.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f8222%2f82222835.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f4250843%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11980140%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7775%2f77751254.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7775%2f77751254.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f4145804%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11915652%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7973%2f79733641.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7973%2f79733641.jpg%3f_ex%3d64x64" border="0"></a>
+<hr>
+<h3>リバースエンジニアリングにより、ER図を作成</h3>
+<a href="./index.html#index">目次</a>
+<hr>
+<p>
+  ODBCのデータソース経由でデータベースにアクセスし、リバースエンジニアリングを行いER図を作成します。
+</p>
+<p>
+  <span style="color:red;">内部的に ADO を利用するため、システムから ADO が利用できる環境である必要があります。</span><br/>
+  ADO は MDACにふくまれますが、MDACはOSだけでなく、Service Packなどとも同時に出荷され、
+  システムにインストールされるため、おそらくシステムにインストールされているものと思われます。
+  <a href="http://www.microsoft.com/japan/msdn/data/default.asp">ここ</a>から入手できます。
+</p>
+
+<h3>1. ER図の作成</h3>
+  <div class="indent">
+    <p>
+      「リバース」タブを開きます。
+    </p>
+    <p>
+      <img src="./img/13.jpg">
+    </p>
+  </div>
+  
+<h3>2. データ型設定ファイルの指定</h3>
+  <div class="indent">
+    <p>
+      このソフトでは、ODBC - ADO 経由で RDBMS や、Excelにアクセスするため、
+      データベース本来のデータ型を取得することができません。<br />
+      なので、表示のために、<a href="http://www.microsoft.com/japan/msdn/library/default.asp?url=/japan/msdn/library/ja/jpado260/htm/mdcstdatatypeenum.asp">
+      ADO API のデータ型定数値</a>と表示するデータ型を データ型設定ファイル にて、以下の様に指定します(0 - 255)。
+    </p>
+    <p>
+      <i>[データ型定数値]=[ExcelERD で表示するデータ型名]</i>
+    </p>
+    <p>
+      <b>例</b> <br/>
+       129=Char
+    </p>
+  </div>
+    
+<h3>3. データベースへの接続</h3>
+  <div class="indent">
+    <p>
+      「実行」ボタンを押すと、データベースへ接続を行うダイアログが表示されます。<br/>
+      必要項目を設定し、「接続」ボタンを押してください。
+    </p>
+    <p>
+      <img src="./img/14.jpg">
+    </p>
+    <p>
+      <table border="1" cellspacing="0" cellpadding="0">
+        <tr>
+          <th>項目</th>
+          <th>設定値</th>
+        </tr>
+        <tr>
+          <td>ODBC データソース</td>
+          <td>ODBC データソースを選択してください</td>
+        </tr>
+        <tr>
+          <td>ユーザID</td>
+          <td>必要に応じてユーザIDを設定してください</td>
+        </tr>
+        <tr>
+          <td>パスワード</td>
+          <td>必要に応じてパスワードを設定してください</td>
+        </tr>
+      </table>
+    </p>
+  </div>
+  
+<h3>4. スキーマの選択</h3>
+  <div class="indent">
+    <p>
+      接続が正常に行われると、「スキーマ」タブが開きます。RDBMSによって、カタログ要素がなかったり、
+      スキーマ要素がなかったりするため、適宜各テキストボックス右の「...」ボタンにて検索を行い、
+      カタログ、スキーマを絞り込みます。
+    </p>
+    <p>
+      最終的にテーブルリストに、テーブルおよびビュー名の一覧が表示されますので、
+      ER図を作成する対象を選択し、「作成」ボタンを押します。
+    </p>
+    <p>
+      <img src="./img/15.jpg">
+    </p>
+  </div>
+    
+<h3>5. ER図出力先シートの選択</h3>  
+  <div class="indent">
+    <p>
+      ER図を出力するシートを選択します。
+    </p>  
+    <p>
+      <img src="./img/16.jpg">
+    </p>
+    <p>
+      ※「(新規シート)」を選択すると、新たにシートを作成します。
+    </p>
+  </div>  
+    
+<h3>4. 出力結果</h3>
+  <div class="indent">
+    <img src="./img/17.jpg">
+  </div>    
+  <br/><div style="width:100%;text-align:right;">copyright(c) 2006 <a href="http://typea.dip.jp" target="_blank">YAGI Hiroto</a></div>
+<hr>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1390100%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11014848%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79810110.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79810110.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1771867%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11350891%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f3390%2f33902629.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f3390%2f33902629.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f4520981%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f12128377%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f8731%2f87311336.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f8731%2f87311336.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1768290%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11347535%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7561%2f75614592.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7561%2f75614592.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f4159592%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11923358%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79811236.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79811236.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1654266%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11246390%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7741%2f77411974.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7741%2f77411974.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1785356%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11363646%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f5340%2f53403897.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f5340%2f53403897.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f1697547%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11286940%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79810669.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7981%2f79810669.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f4162148%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11925451%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f5324%2f53240400.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f5324%2f53240400.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f3987589%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11797717%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f8222%2f82222835.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f8222%2f82222835.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f4250843%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11980140%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7775%2f77751254.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7775%2f77751254.jpg%3f_ex%3d64x64" border="0"></a>
+<a href="http://hb.afl.rakuten.co.jp/hgc/0677ffc3.464ce964.0677ffc4.3674380c/?pc=http%3a%2f%2fitem.rakuten.co.jp%2fbook%2f4145804%2f&m=http%3a%2f%2fm.rakuten.co.jp%2fbook%2fi%2f11915652%2f" target="_blank"><img src="http://hbb.afl.rakuten.co.jp/hgb/?pc=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7973%2f79733641.jpg%3f_ex%3d80x80&m=http%3a%2f%2fthumbnail.image.rakuten.co.jp%2f%400_mall%2fbook%2fcabinet%2f7973%2f79733641.jpg%3f_ex%3d64x64" border="0"></a>
+<hr>
+</body>
+</html>

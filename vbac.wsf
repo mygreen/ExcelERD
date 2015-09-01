@@ -1,0 +1,1138 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<package>
+<comment>
+The vbac is not VBA compiler.
+Instead, this unsophisticated script frees VBA code from binary files.
+This script is distributed as part of the Ariawase library.
+
+The Project Page: https://github.com/vbaidiot/Ariawase
+</comment>
+<job id="">
+<?job error="true" debug="false" ?>
+<runtime>
+<description></description>
+<example></example>
+</runtime>
+<resource id="HelpMessage">
+vbac (version 0.6.0)
+
+Usage: cscript vbac.wsf &lt;command&gt; [&lt;options&gt;]
+
+Commands:
+  combine           Import all VBComponents
+  decombine         Export all VBComponents
+  clear             Remove all VBComponents
+  help              Display this help message
+
+Options:
+  /binary:&lt;dir&gt;     Specify directory of macro-enabled Office files
+                    (default: bin)
+  /source:&lt;dir&gt;     Specify directory of source code files
+                    (default: src)
+  /vbaproj          Use .vbaproj file
+  /dbcompact        With Access DB compaction
+</resource>
+<script language="JScript">
+<![CDATA[
+// Enumerations:
+//   Word   - http://msdn.microsoft.com/en-us/library/office/jj684104.aspx
+//   Excel  - http://msdn.microsoft.com/en-us/library/office/ff838815.aspx
+//   Access - http://msdn.microsoft.com/en-us/library/office/jj713155.aspx
+
+// WdSaveFormat
+var wdFormatDocument97 = 0 //.doc
+var wdFormatTemplate97 = 1 //.dot
+var wdFormatXMLDocumentMacroEnabled = 13 //.docm
+var wdFormatXMLTemplateMacroEnabled = 15 //.dotm
+
+// XlFileFormat
+var xlExcel9795 = 43; //.xls 97-2003 format in Excel 2003 or prev
+var xlExcel8    = 56; //.xls 97-2003 format in Excel 2007
+var xlExcel12   = 50; //.xlsb
+var xlOpenXMLWorkbookMacroEnabled = 52; //.xlsm
+
+// AcNewDatabaseFormat
+var acNewDatabaseFormatAccess2000 =  9; //.mdb
+var acNewDatabaseFormatAccess2002 = 10; //.mdb
+var acNewDatabaseFormatAccess2007 = 12; //.accdb
+
+// AcSysCmdAction
+var acSysCmdAccessVer = 7;
+
+// AcObjectType
+var acTable  = 0;
+var acQuery  = 1;
+var acForm   = 2;
+var acReport = 3;
+var acMacro  = 4;
+var acModule = 5;
+
+// vbext_ct_* (ref: http://msdn.microsoft.com/en-us/library/office/gg264162.aspx)
+var vbext_ct_StdModule   = 1;
+var vbext_ct_ClassModule = 2;
+var vbext_ct_MSForm      = 3;
+var vbext_ct_Document    = 100;
+
+// FileSystemObject (ref: http://msdn.microsoft.com/en-us/library/hww8txat%28v=vs.84%29.aspx)
+var fso = WScript.CreateObject("Scripting.FileSystemObject");
+
+var forReading   = 1;
+var forWriting   = 2;
+var forAppending = 8;
+
+var scriptPath = WScript.ScriptFullName;
+
+var args = (function() {
+    var a = new Array(WScript.Arguments.length);
+    for (var i = 0; i < a.length; i++) a[i] = WScript.Arguments.item(i);
+    return a;
+}());
+
+var getResource = function(str) {
+    return scriptlet.getResource(str).replace(/^\s+|\s+$/g, "");
+};
+
+var println = function(str) {
+    WScript.Echo(str);
+};
+
+var foreachEnum = function(collection, callback) {
+    for ( var xs=new Enumerator(collection), x=xs.item(), i=0;
+          !xs.atEnd();
+          xs.moveNext(), x=xs.item(), i++
+        ) {
+        
+        if (!!callback(x, i)) break;
+    }
+}
+
+var dateTimeString = function(dt) {
+    var g = function(y) { return (y < 2000) ? 1900 + y : y; };
+    var f = function(n) { return (n < 10) ? "0" + n : n.toString(); };
+    var ymd = g(dt.getYear())  + f(dt.getMonth() + 1) + f(dt.getDate());
+    var hns = f(dt.getHours()) + f(dt.getMinutes())   + f(dt.getSeconds());
+    return ymd + " " + hns;
+};
+
+var typename = function(obj) {
+    if (obj === undefined) return 'Undefined';
+    if (obj == null) return 'Null';
+    return Object.prototype.toString.call(obj).slice(8, -1);
+};
+
+var isPathRooted = function(path) {
+    if (!path) return false;
+    
+    var p1 = path.substring(0, 1);
+    if (p1 == '\\' || p1 == '/') return true;
+    var p2 = path.substring(1, 2);
+    if (p2 == ':') return true;
+    
+    return false;
+};
+
+var Conditional = function(val) {
+    this.flag  = false;
+    this.value = val;
+};
+Conditional.prototype.change = function(val) {
+    this.flag  = true;
+    if (val !== undefined) this.value = val;
+};
+
+var CmdParam = function(paramObj) {
+    this.defaultParameterName = paramObj.defaultParameterName;
+    delete paramObj.defaultParameterName;
+    this.parameters = paramObj;
+    
+    this.paramNames = {};
+    for (var pname in this.parameters)
+        this.paramNames[pname.toLowerCase()] = pname;
+};
+CmdParam.prototype.exists = function(paramName) {
+    return paramName.toLowerCase() in this.paramNames;
+};
+CmdParam.prototype.get = function(paramName) {
+    var pname = this.paramNames[paramName.toLowerCase()];
+    return this.parameters[pname];
+};
+CmdParam.prototype.set = function(paramName, value) {
+    var pname = this.paramNames[paramName.toLowerCase()];
+    this.parameters[pname] = value;
+};
+CmdParam.prototype.setParam = function(pname, arg) {
+    // the 'Object' assumed Conditional class
+    switch (typename(this.get(pname))) {
+    case 'Boolean':
+        if (arg === undefined) arg = true;
+        this.set(pname, Boolean(arg));
+        break;
+    case 'Number':
+        this.set(pname, Number(arg));
+        break;
+  //case 'Date':
+  //    this.set(pname, Date.parse(arg));
+  //    break;
+    case 'Object':
+        this.get(pname).change(arg); //FIXME: type of value is string only?
+        break;
+    case 'Array':
+        this.get(pname).push(arg);   //FIXME: type of value is string only?
+        break;
+    case 'Undefined':
+        break;
+    default:
+        this.set(pname, arg || "");
+        break;
+    }
+};
+CmdParam.prototype.parse = function(args) {
+    var pname = this.defaultParameterName;
+    for (var i = 0; i < args.length; i++) {
+        var value = undefined;
+        
+        switch (args[i].charAt(0)) {
+        case '-': case '/':
+            pname = args[i].substring(1);
+            var j = -1;
+            if (j < 0) j = pname.indexOf(':');
+            if (j < 0) j = pname.indexOf('=');
+            if (j > -1) {
+                value = pname.substring(j + 1);
+                pname = pname.substring(0, j);
+            }
+            break;
+        default:
+            value = args[i];
+            break;
+        }
+        
+        this.setParam(pname, value);
+    }
+    
+    return this.parameters;
+};
+
+var Config = function(binary, source, binbak) {
+    var root = fso.GetParentFolderName(scriptPath);
+    this.bin = (isPathRooted(binary)) ? binary : fso.BuildPath(root, binary);
+    this.src = (isPathRooted(source)) ? source : fso.BuildPath(root, source);
+    this.bak = (!binbak.flag) ? undefined
+             : (isPathRooted(binbak.value)) ? binbak.value
+             : fso.BuildPath(root, binbak.value);
+};
+Config.prototype.getBins = function() { return fso.GetFolder(this.bin).Files; };
+Config.prototype.getSrcs = function() { return fso.GetFolder(this.src).SubFolders; };
+
+var VBAProjFile = function(vbproj, srcdir) {
+    this.vbproj   = vbproj;
+    this.fileName = 'App.vbaproj';
+    this.path     = fso.BuildPath(srcdir, this.fileName);
+};
+VBAProjFile.prototype.projPropName = {
+    'Name': 1, 'Description': 1, 'HelpFile': 1, 'HelpContextID': 1
+};
+VBAProjFile.prototype.removeAllRefs = function() {
+    var self = this;
+    foreachEnum(this.vbproj.References, function(ref) {
+        if (ref.BuiltIn) return false;
+        self.vbproj.References.Remove(ref);
+    });
+};
+VBAProjFile.prototype.read = function(is64BitOffice) {
+    var isSection = function(line) { return line.match(/^\[.*\]$/) != null; };
+    var getParam  = function(line) {
+        var i = line.indexOf('=');
+        return (i > -1) ? { key: line.substring(0, i), val: line.substring(i+1) } : null;
+    };
+    
+    if (!fso.FileExists(this.path)) return;
+    
+    var fl = fso.OpenTextFile(this.path, forReading);
+    while (!fl.AtEndOfStream) {
+        var line    = fl.ReadLine();
+        var section = line;
+        
+        switch (section) {
+        case '[General]':
+            while (!fl.AtEndOfStream) {
+                line = fl.ReadLine();
+                if (isSection(line)) break;
+                
+                var p = getParam(line);
+                // quick-fix solution
+                if (is64BitOffice && p.key == "HelpContextID")
+                    println("! Warning: can not 'VBProject.HelpContextID = \"" + p.val + "\"'. probably 64-bit Office have a bug.");
+                else
+                    this.vbproj[p.key] = p.val;
+            }
+            break;
+        case '[Reference]':
+            this.removeAllRefs();
+            
+            while (!fl.AtEndOfStream) {
+                line = fl.ReadLine();
+                if (isSection(line)) break;
+                
+                var p = getParam(line);
+                var refinf = p.key.split(" ");
+                this.vbproj.References.AddFromGuid(refinf[0], refinf[1], refinf[2]);
+            }
+            break;
+        default:
+            break;
+        }
+    }
+};
+VBAProjFile.prototype.write = function() {
+    var fl = fso.OpenTextFile(this.path, forWriting, true);
+    
+    fl.WriteLine('[General]');
+    for (var prop in this.projPropName)
+        fl.WriteLine(prop + "=" + this.vbproj[prop]);
+    
+    fl.WriteLine('[Reference]');
+    foreachEnum(this.vbproj.References, function(ref) {
+        if (ref.BuiltIn) return false;
+        fl.WriteLine(ref.GUID + " " + ref.Major + " " + ref.Minor + "=" + ref.Description);
+    });
+    
+    fl.Close();
+};
+
+var Office = function() {};
+Office.prototype.progID1 = undefined;
+Office.prototype.progID2 = "Application";
+Office.prototype.getProgID = function() {
+    return (this.progID1 !== undefined) ? this.progID1 + "." + this.progID2 : undefined;
+};
+Office.prototype.setCmdParam = function(cmdParam) {
+    this.cmdParam = cmdParam;
+};
+Office.prototype.isDirectiveOnly = function(codeModule) {
+    var ml = codeModule.CountOfLines;
+    var dl = codeModule.CountOfDeclarationLines;
+    if (ml > dl) return false;
+    if (ml < 1)  return true;
+    for (var i=0,arr=codeModule.Lines(1, dl).split("\r\n"),len=arr.length; i<len; i++) {
+        var s = arr[i].replace(/^\s+|\s+$/g, "");
+        if (s != "" && s.charAt(0).toLowerCase() != "o") return false;
+    }
+    return true;
+};
+Office.prototype.isValidFileName = function(fname) {
+    return fname.match(/[\\/:\*\?"<>\|]/) == null;
+};
+Office.prototype.loanOfOfficeDocument = function(path, isCreate, callback) {
+    throw "Not Implemented";
+};
+Office.prototype.checkMacroSecurity = function(ofDoc) {
+    try {
+        ofDoc.VBProject;
+    }
+    catch (ex) {
+        switch (ex.number) {
+        case -2146822220:
+            ex.description = [ex.description, "See also http://support.microsoft.com/kb/282830"].join("\n");
+            break;
+        case -2146827284:
+            ex.description = [ex.description, "See also http://support.microsoft.com/kb/813969"].join("\n");
+            break;
+        default:
+            break;
+        }
+        
+        throw ex;
+    }
+};
+Office.prototype.is64Bit = function(ofApp) {
+    // ref: http://support.microsoft.com/kb/2186281
+    return parseInt(ofApp.Version) >= 14
+        && ofApp.ProductCode.substring(20, 21) == "1";
+};
+Office.prototype.extensionTypeTable = (function() {
+    var tbl = {};
+    tbl['bas'] = vbext_ct_StdModule;
+    tbl['cls'] = vbext_ct_ClassModule;
+    tbl['frm'] = vbext_ct_MSForm;
+    tbl['frx'] = vbext_ct_MSForm;
+    tbl['dcm'] = vbext_ct_Document;
+    return tbl;
+})();
+Office.prototype.typeExtensionTable = (function () {
+    var tbl = {};
+    tbl[vbext_ct_StdModule]   = 'bas';
+    tbl[vbext_ct_ClassModule] = 'cls';
+    tbl[vbext_ct_MSForm]      = 'frm'; // with 'frx'
+    tbl[vbext_ct_Document]    = 'dcm';
+    return tbl;
+})();
+Office.prototype.addTargetType = function(typ) {
+};
+Office.prototype.cleanupBinary = function(ofDoc, verbose) {
+    var compos = ofDoc.VBProject.VBComponents;
+    var self   = this;
+    foreachEnum(compos, function(compo) {
+        var bname = compo.Name;
+        //if (!(compo.Type.toString() in self.typeExtensionTable)) return false;
+        if (compo.Type == vbext_ct_Document) {
+            if (self.isDirectiveOnly(compo.CodeModule)) return false;
+            compo.CodeModule.DeleteLines(1, compo.CodeModule.CountOfLines);
+        }
+        else {
+            compos.Remove(compo);
+        }
+        if (!!verbose) println("- Remove: " + bname);
+    });
+};
+Office.prototype.cleanupSource = function(dir, verbose) {
+    if (!fso.FolderExists(dir)) {
+         fso.CreateFolder(dir);
+         return;
+    }
+    
+    var self = this;
+    foreachEnum(fso.GetFolder(dir).Files, function(fl) {
+        var fname = fso.GetFileName(fl.Path);
+        var xname = fso.GetExtensionName(fl.Path);
+        if (!(xname in self.extensionTypeTable)) return false;
+        
+        fl.Delete();
+        if (!!verbose) println("- Remove: " + fname);
+    });
+};
+Office.prototype.importComponent = function(path, ofDoc) {
+    var compos = ofDoc.VBProject.VBComponents;
+    compos.Import(path);
+};
+Office.prototype.importDocument = function(path, ofDoc) {
+    throw "Not Implemented";
+};
+Office.prototype.importSource = function(impdir, ofDoc) {
+    var self = this;
+    foreachEnum(fso.GetFolder(impdir).Files, function(fl) {
+        var xname = fso.GetExtensionName(fl.Path);
+        var bname = fso.GetBaseName(fl.Path);
+        if (!(xname in self.extensionTypeTable)) return false;
+        if (xname == 'frx') return false;
+        
+        if (xname != 'dcm')
+            self.importComponent(fl.Path, ofDoc);
+        else
+            self.importDocument(fl.Path, ofDoc);
+        
+        println("- Import: " + fso.GetFileName(fl.Path));
+        if (xname == 'frm') println("- Import: " + bname + ".frx");
+    });
+};
+Office.prototype.importProject = function(impdir, vbproj, is64BitOffice) {
+    var proj = new VBAProjFile(vbproj, impdir);
+    if (fso.FileExists(proj.path)) {
+        proj.read(is64BitOffice);
+        println("- Import: " + proj.fileName);
+    }
+};
+Office.prototype.exportSource = function(ofDoc, expdir) {
+    var self = this;
+    foreachEnum(ofDoc.VBProject.VBComponents, function(compo) {
+        //if (!(compo.Type.toString() in self.typeExtensionTable)) return false;
+        if (compo.Type == vbext_ct_Document) {
+            if (self.isDirectiveOnly(compo.CodeModule)) return false;
+        }
+        
+        var xname = self.typeExtensionTable[compo.Type.toString()];
+        var bname = compo.Name;
+        var fname = bname + "." + xname;
+        compo.Export(fso.BuildPath(expdir, fname));
+        
+        println("- Export: " + fname);
+        if (xname == 'frm') println("- Export: " + bname + ".frx");
+    });
+};
+Office.prototype.exportProject = function(vbproj, expdir) {
+    var proj = new VBAProjFile(vbproj, expdir)
+    proj.write();
+    println("- Export: " + proj.fileName);
+};
+Office.prototype.combine = function(tsrc, tbin) {
+    println("> Target: " + fso.GetFileName(tbin));
+    
+    var self = this;
+    this.loanOfOfficeDocument(tbin, true, function(ofDoc) {
+        self.cleanupBinary(ofDoc);
+        if (self.cmdParam.vbaproj) {
+            var is64BitOffice = self.is64Bit(ofDoc.Application);
+            self.importProject(tsrc, ofDoc.VBProject, is64BitOffice);
+        }
+        self.importSource(tsrc, ofDoc);
+        ofDoc.Save();
+    });
+    
+    println();
+};
+Office.prototype.decombine = function(tbin, tsrc) {
+    println("> Target: " + fso.GetFileName(tbin));
+    
+    var self = this;
+    this.loanOfOfficeDocument(tbin, false, function(ofDoc) {
+        self.cleanupSource(tsrc);
+        if (self.cmdParam.vbaproj) self.exportProject(ofDoc.VBProject, tsrc);
+        self.exportSource(ofDoc, tsrc);
+    });
+    
+    println();
+};
+Office.prototype.clear = function(tbin) {
+    println("> Target: " + fso.GetFileName(tbin));
+    
+    var self = this;
+    this.loanOfOfficeDocument(tbin, false, function(ofDoc) {
+        self.cleanupBinary(ofDoc, true);
+        ofDoc.Save();
+    });
+    
+    println();
+};
+
+var Dummy = function() {};
+Dummy.prototype = new Office();
+Dummy.prototype.combine   = function() {};
+Dummy.prototype.decombine = function() {};
+Dummy.prototype.clear     = function() {};
+
+var Word = function() {};
+Word.prototype = new Office();
+Word.prototype.progID1 = "Word";
+Word.prototype.createOpenFile = function(wdApp, path) {
+    var wdSaveFormat;
+    var vernum = parseInt(wdApp.Version);
+    switch (fso.GetExtensionName(path)) {
+    case 'doc':  wdSaveFormat = wdFormatDocument97;
+                 break;
+    case 'dot':  wdSaveFormat = wdFormatTemplate97;
+                 break;
+    case 'docm': wdSaveFormat = wdFormatXMLDocumentMacroEnabled;
+                 break;
+    case 'dotm': wdSaveFormat = wdFormatXMLTemplateMacroEnabled;
+                 break;
+    default:     wdSaveFormat = (vernum < 12) ? wdFormatDocument97 : wdFormatXMLDocumentMacroEnabled;
+                 path        += (vernum < 12) ? '.doc'             : '.docm';
+                 break;
+    }
+    
+    var wdDoc;
+    try {
+        if (fso.FileExists(path)) {
+            wdDoc = wdApp.Documents.Open(path)
+        }
+        else {
+            wdDoc = wdApp.Documents.Add();
+            wdDoc.SaveAs(path, wdSaveFormat);
+        }
+    }
+    catch (ex) {
+        if (wdDoc != null) wdDoc.Close();
+        throw ex;
+    }
+    return wdDoc;
+};
+Word.prototype.loanOfOfficeDocument = function(path, isCreate, callback) {
+    var wdApp, wdDoc, ret;
+    
+    try {
+        wdApp = new ActiveXObject(this.getProgID());
+        wdApp.DisplayAlerts = false;
+        //wdApp.EnableEvents  = false; //In Word, Application class does not have this property
+    try {
+        wdDoc = (isCreate) ? this.createOpenFile(wdApp, path) : wdApp.Documents.Open(path);
+        this.checkMacroSecurity(wdDoc);
+        
+        ret = callback(wdDoc);
+    } finally { if (wdDoc != null) wdDoc.Close(); }
+    } finally { if (wdApp != null) wdApp.Quit();  }
+    
+    return ret;
+};
+Word.prototype.importDocument = function(path, wdDoc) {
+    var compos = wdDoc.VBProject.VBComponents;
+    var impCompo = compos.Import(path);
+    
+    var origCompo;
+    var cname=impCompo.Name, bname=fso.GetBaseName(path);
+    if (cname != bname) {
+        origCompo = compos.item(bname);
+    }
+    else {
+        var doc = wdDoc.Documents.Add();
+        compos  = wdDoc.VBProject.VBComponents; // refresh Component collection
+        origCompo = compos.item(doc.CodeName);
+        
+        var tmpname = "ImportTemp";
+        var find = function(compos, name) {
+            var ret = false;
+            foreachEnum(compos, function(c) { return ret = (c.Name == name); });
+            return ret;
+        };
+        while (find(compos, tmpname)) tmpname += "1";
+        
+        impCompo.Name  = tmpname;
+        origCompo.Name = cname;
+    }
+    
+    var imod=impCompo.CodeModule, omod=origCompo.CodeModule;
+    omod.DeleteLines(1, omod.CountOfLines);
+    omod.AddFromString(imod.Lines(1, imod.CountOfLines));
+    compos.Remove(impCompo);
+};
+
+var Excel = function() {};
+Excel.prototype = new Office();
+Excel.prototype.progID1 = "Excel";
+Excel.prototype.createOpenFile = function(xlApp, path) {
+    var xlFileFormat;
+    var vernum = parseInt(xlApp.Version);
+    switch (fso.GetExtensionName(path)) {
+    case 'xls':  case 'xla':  case 'xlt':
+        xlFileFormat = (vernum < 12) ? xlExcel9795 : xlExcel8;
+        break;
+    case 'xlsb':
+        xlFileFormat = xlExcel12;
+        break;
+    case 'xlsm': case 'xlam': case 'xltm':
+        xlFileFormat = xlOpenXMLWorkbookMacroEnabled;
+        break;
+    default:
+        xlFileFormat = (vernum < 12) ? xlExcel9795 : xlOpenXMLWorkbookMacroEnabled;
+        path        += (vernum < 12) ? '.xls'      : '.xlsm';
+        break;
+    }
+    
+    var xlBook;
+    try {
+        if (fso.FileExists(path)) {
+            xlBook = xlApp.Workbooks.Open(path);
+        }
+        else {
+            xlBook = xlApp.Workbooks.Add();
+            xlBook.SaveAs(path, xlFileFormat);
+        }
+    }
+    catch (ex) {
+        if (xlBook != null) xlBook.Close();
+        throw ex;
+    }
+    return xlBook;
+};
+Excel.prototype.loanOfOfficeDocument = function(path, isCreate, callback) {
+    var xlApp, xlBook, ret;
+    
+    try {
+        xlApp = new ActiveXObject(this.getProgID());
+        xlApp.DisplayAlerts = false;
+        xlApp.EnableEvents  = false;
+    try {
+        xlBook = (isCreate) ? this.createOpenFile(xlApp, path) : xlApp.Workbooks.Open(path);;
+        this.checkMacroSecurity(xlBook);
+        
+        ret = callback(xlBook);
+    } finally { if (xlBook != null) xlBook.Close(); }
+    } finally { if (xlApp  != null) xlApp.Quit();   }
+    
+    return ret;
+};
+Excel.prototype.importDocument = function(path, xlBook) {
+    var compos = xlBook.VBProject.VBComponents;
+    var impCompo = compos.Import(path);
+    
+    var origCompo;
+    var cname=impCompo.Name, bname=fso.GetBaseName(path);
+    if (cname != bname) {
+        origCompo = compos.item(bname);
+    }
+    else {
+        var sht = xlBook.Worksheets.Add();
+        compos  = xlBook.VBProject.VBComponents; // refreash Component collection
+        origCompo = compos.item(sht.CodeName);
+        
+        var tmpname = "ImportTemp";
+        var find = function(compos, name) {
+            var ret = false;
+            foreachEnum(compos, function(c) { return ret = (c.Name == name); });
+            return ret;
+        };
+        while (find(compos, tmpname)) tmpname += "1";
+        
+        impCompo.Name  = tmpname;
+        origCompo.Name = cname;
+    }
+    
+    var imod=impCompo.CodeModule, omod=origCompo.CodeModule;
+    omod.DeleteLines(1, omod.CountOfLines);
+    omod.AddFromString(imod.Lines(1, imod.CountOfLines));
+    compos.Remove(impCompo);
+};
+
+var Outlook = function() {};
+Outlook.prototype = new Office();
+Outlook.prototype.sadNews = function(tbin) {
+    var notSupported =
+        "Unfortunately, Outlook does not support access to VBA project from the outside.\n"
+        + "See also http://support.microsoft.com/kb/290779.";
+    
+    println("> Target: " + fso.GetFileName(tbin));
+    println(notSupported);
+    println();
+};
+Outlook.prototype.combine   = function(tsrc, tbin) { this.sadNews(tbin); };
+Outlook.prototype.decombine = function(tbin, tsrc) { this.sadNews(tbin); };
+Outlook.prototype.clear     = function(tbin)       { this.sadNews(tbin); };
+
+var Access = function() {};
+Access.prototype = new Office();
+Access.prototype.progID1 = "Access";
+Access.prototype.createOpenFile = function(acApp, path) {
+    var dbFormat;
+    var vernum = parseInt(acApp.SysCmd(acSysCmdAccessVer));
+    switch (fso.GetExtensionName(path)) {
+    case 'mdb':   dbFormat = acNewDatabaseFormatAccess2000;
+                  break;
+    case 'accdb': dbFormat = acNewDatabaseFormatAccess2007;
+                  break;
+    default:      dbFormat = (vernum < 12) ? acNewDatabaseFormatAccess2002 : acNewDatabaseFormatAccess2007;
+                  path    += (vernum < 12) ? '.mdb'                        : '.accdb';
+                  break;
+    }
+    
+    if (!fso.FileExists(path))
+        acApp.NewCurrentDatabase(path, dbFormat);
+    else
+        acApp.OpenCurrentDatabase(path);
+    
+    return path;
+};
+Access.prototype.getDbProperty = function(db, propName) {
+    var prop = undefined;
+    try { prop = db.Properties(propName); }
+    catch (e) {}
+    return prop;
+};
+Access.prototype.loanOfAcProj = function(path, isCreate, callback) {
+    var acApp, acDb, ret;
+    
+    try {
+        acApp = new ActiveXObject(this.getProgID());
+        acApp.Visible = false;
+    try {
+        if (!!path) {
+            if (isCreate)
+                this.createOpenFile(acApp, path);
+            else
+                acApp.OpenCurrentDatabase(path);
+        }
+        
+        acDb = acApp.CurrentDB();
+        var startUp = this.getDbProperty(acDb, "StartUpForm");
+        if (startUp !== undefined) acApp.DoCmd.Close(acForm, startUp.Value);
+        
+        ret = callback(acApp.CurrentProject);
+    } finally { if (acDb  != null) acDb.Close(); }
+    } finally { if (acApp != null) { if (acDb != null) acApp.CloseCurrentDatabase(); acApp.Quit(); } }
+    
+    return ret;
+};
+Access.prototype.extensionTypeTable = (function() {
+    var tbl = {};
+    tbl['mdl'] = acModule;
+    tbl['bas'] = acModule;
+    tbl['cls'] = acModule;
+    tbl['frm'] = acForm;
+    tbl['rpt'] = acReport;
+    tbl['mcr'] = acMacro;
+    return tbl;
+})();
+Access.prototype.typeExtensionTable = (function() {
+    var tbl = {};
+    tbl[acModule] = 'mdl'; // rename 'bas' or 'cls'
+    tbl[acForm]   = 'frm';
+    tbl[acReport] = 'rpt';
+    tbl[acMacro]  = 'mcr';
+    return tbl;
+})();
+Access.prototype.addTargetType = function(acTyp) {
+    var ext = undefined;
+    switch (acTyp) {
+    case acQuery: ext = 'qry'; break;
+    default: break;
+    }
+    
+    if (ext !== undefined) {
+        this.extensionTypeTable[ext] = acTyp;
+        this.typeExtensionTable[acTyp] = ext;
+    }
+};
+Access.prototype.iterAllObjects = function(acApp, action) {
+    var i;
+    var objs = new Array();
+    
+    var acProj = acApp.CurrentProject;
+    for (i = 0; i < acProj.AllModules.Count; i++) objs.push(acProj.AllModules.item(i));
+    for (i = 0; i < acProj.AllForms.Count;   i++) objs.push(acProj.AllForms.item(i));
+    for (i = 0; i < acProj.AllReports.Count; i++) objs.push(acProj.AllReports.item(i));
+    for (i = 0; i < acProj.AllMacros.Count;  i++) objs.push(acProj.AllMacros.item(i));
+    
+    var acData = acApp.CurrentData;
+    for (i = 0; i < acData.AllQueries.Count; i++) objs.push(acData.AllQueries.item(i));
+    
+    for (i = 0; i < objs.length; i++) {
+        if (!!action(objs[i], i)) break;
+    }
+};
+Access.prototype.getAcDocs = function(acApp) {
+    var acDb;
+    try {
+        acDb = acApp.CurrentDB();
+        var docs = new Array();
+        var conts = ['Modules', 'Forms', 'Reports', 'Scripts'];
+        var c2eTable = this.containerExtensionTable;
+        for (var i = 0; i < conts.length; i++) {
+            var cont = conts[i];
+            foreachEnum(acDb.Containers(cont).Documents, function(doc) {
+                docs.push({ container: cont, name: doc.Name });
+            });
+        }
+    } finally { if (acDb != null) acDb.Close(); }
+    
+    return docs;
+};
+Access.prototype.cleanupBinary = function(acProj, verbose) {
+    var acApp = acProj.Application;
+    var self  = this;
+    this.iterAllObjects(acApp, function(obj) {
+        var name = obj.Name;
+        if (!(obj.Type.toString() in self.typeExtensionTable)) return false;
+        
+        acApp.DoCmd.DeleteObject(obj.Type, name);
+        if (!!verbose) println("- Remove: " + name);
+    });
+};
+Access.prototype.cleanupSource = function(dir, verbose) {
+    if (!fso.FolderExists(dir)) {
+         fso.CreateFolder(dir);
+         return;
+    }
+    
+    var self = this;
+    foreachEnum(fso.GetFolder(dir).Files, function(fl) {
+        var fname = fso.GetFileName(fl.Path);
+        var xname = fso.GetExtensionName(fl.Path);
+        if (!(xname in self.extensionTypeTable)) return false;
+        
+        fl.Delete();
+        if (!!verbose) println("- Remove: " + fname);
+    });
+};
+Access.prototype.importSource = function(impdir, acProj) {
+    var acApp  = acProj.Application;
+    var compos = acApp.VBE.ActiveVBProject.VBComponents;
+    var self   = this;
+    foreachEnum(fso.GetFolder(impdir).Files, function(fl) {
+        var path  = fl.Path;
+        var fname = fso.GetFileName(path);
+        var xname = fso.GetExtensionName(path);
+        var bname = fso.GetBaseName(path);
+        if (!(xname in self.extensionTypeTable)) return false;
+        
+        var typ = self.extensionTypeTable[xname];
+        if (typ == acModule) {
+            var c = compos.Import(path);
+            c.Name = bname;
+            acApp.DoCmd.Save(typ, bname);
+        }
+        else {
+            acApp.LoadFromText(typ, bname, path);
+        }
+        println("- Import: " + fname);
+    });
+};
+Access.prototype.exportSource = function(acProj, expdir) {
+    var acApp  = acProj.Application;
+    var compos = acApp.VBE.ActiveVBProject.VBComponents;
+    var self   = this;
+    this.iterAllObjects(acApp, function(obj) {
+        var bname = obj.Name;
+        if (!(obj.Type.toString() in self.typeExtensionTable)) return false;
+        if (!self.isValidFileName(bname)) {
+            println("! Warning: skip export. object '" + bname + "' is invalid file name");
+            return false;
+        }
+        
+        var xname = self.typeExtensionTable[obj.Type.toString()];
+        if (obj.Type == acModule) {
+            switch (compos.item(bname).Type) {
+            case vbext_ct_StdModule:   xname = 'bas'; break;
+            case vbext_ct_ClassModule: xname = 'cls'; break;
+            default: break;
+            }
+        }
+        
+        var fname = bname + "." + xname;
+        var path  = fso.BuildPath(expdir, fname);
+        if (obj.Type == acModule)
+            compos(obj.Name).Export(path);
+        else
+            acApp.SaveAsText(obj.Type, bname, path);
+        
+        println("- Export: " + fname);
+    });
+};
+Access.prototype.compact = function(dbPath, acApp) {
+    var engine = (!!acApp) ? acApp.DBEngine : (function() {
+        var egname = "DAO.DBEngine";
+        var egvers = ["120", "36", "35"];
+        for (var i = 0; i < egvers.length; i++) {
+            try { return new ActiveXObject(egname + "." + egvers[i]); }
+            catch (e) {}
+        }
+        return undefined;
+    })();
+    
+    var tempPath = (function(dbPath) {
+        var d = fso.GetParentFolderName(dbPath);
+        var b = fso.GetBaseName(dbPath);
+        var x = fso.GetExtensionName(dbPath);
+        var tempExt  = "tempdb";
+        var tempPath = fso.BuildPath(d, [b, x, tempExt].join("."));
+        var delim = "#";
+        var i = 0;
+        while (fso.FileExists(tempPath))
+            tempPath = fso.BuildPath(d, [b+delim+(++i), x, tempExt].join("."));
+        return tempPath;
+    })(dbPath);
+    
+    engine.CompactDatabase(dbPath, tempPath);
+    fso.DeleteFile(dbPath);
+    fso.MoveFile(tempPath, dbPath);
+    println("- Compact: " + fso.GetFileName(dbPath));
+};
+Access.prototype.combine = function(tsrc, tbin) {
+    println("> Target: " + fso.GetFileName(tbin));
+    
+    var self = this;
+    this.loanOfAcProj(tbin, true, function(acProj) {
+        self.cleanupBinary(acProj);
+        if (self.cmdParam.vbaproj) {
+            var is64BitOffice = self.is64Bit(acProj.Application);
+            self.importProject(tsrc, acProj.Application.VBE.ActiveVBProject, is64BitOffice);
+        }
+        self.importSource(tsrc, acProj);
+    });
+    this.loanOfAcProj(undefined, false, function(acProj) {
+        if (self.cmdParam.dbCompact) self.compact(tbin, acProj.Application);
+    });
+    
+    println();
+};
+Access.prototype.decombine = function(tbin, tsrc) {
+    println("> Target: " + fso.GetFileName(tbin));
+    
+    var self = this;
+    this.loanOfAcProj(tbin, true, function(acProj) {
+        self.cleanupSource(tsrc);
+        if (self.cmdParam.vbaproj) self.exportProject(acProj.Application.VBE.ActiveVBProject, tsrc);
+        self.exportSource(acProj, tsrc);
+    });
+    this.loanOfAcProj(undefined, false, function(acProj) {
+        if (self.cmdParam.dbCompact) self.compact(tbin, acProj.Application);
+    });
+    
+    println();
+};
+Access.prototype.clear = function(tbin) {
+    println("> Target: " + fso.GetFileName(tbin));
+    
+    var self = this;
+    this.loanOfAcProj(tbin, true, function(acProj) {
+        self.cleanupBinary(acProj, true);
+    });
+    
+    println();
+};
+
+var Command = function(helper) {
+    this.__helper = helper;
+};
+Command.prototype.__helper = null;
+Command.prototype.help = function() {
+    println(getResource('HelpMessage'));
+};
+Command.prototype.combine = function() {
+    var hlp  = this.__helper;
+    var conf = hlp.config;
+    if (conf.bak !== undefined && fso.FolderExists(conf.bin)) {
+        if (!fso.FolderExists(conf.bak)) fso.CreateFolder(conf.bak);
+        
+        var bkdir = fso.BuildPath(conf.bak, dateTimeString(new Date()));
+        fso.CreateFolder(bkdir);
+        fso.CopyFile(fso.BuildPath(conf.bin, "*.*"), bkdir + "\\");
+    }
+    hlp.combineImpl(conf.src, conf.bin, function() { return conf.getSrcs(); });
+};
+Command.prototype.decombine = function() {
+    var hlp  = this.__helper;
+    var conf = hlp.config;
+    hlp.combineImpl(conf.bin, conf.src, function() { return conf.getBins(); });
+};
+Command.prototype.clear = function() {
+    var hlp  = this.__helper;
+    var conf = hlp.config;
+    hlp.iterTarget(
+        function() { return conf.getBins(); },
+        function(path) {
+            var office = hlp.createOffice(path);
+            office.clear(path);
+        });
+};
+Command.prototype.acdoc = function() {
+    var hlp  = this.__helper;
+    var conf = hlp.config;
+    
+    hlp.iterTarget(
+        function() { return conf.getBins(); },
+        function(path) {
+            if (hlp.getAppName(path) != 'Access') return false;
+            
+            println("> Target: " + fso.GetFileName(path));
+            var docs;
+            var acc = hlp.createOffice(path);
+            acc.loanOfAcProj(path, true, function(acProj) {
+                var acApp = acProj.Application;
+                docs = acc.getAcDocs(acApp);
+            });
+            
+            for (var i = 0; i < docs.length; i++) {
+                var doc = docs[i];
+                println("- " + doc.container + ": " + doc.name);
+            }
+            println();
+        });
+};
+
+var CommandHelper = function(param) {
+    this.parameter = param;
+    this.config  = new Config(param.binary, param.source, param.binbak);
+    this.command = new Command(this);
+};
+CommandHelper.prototype.getAppName = function(fname) {
+    switch (fso.GetExtensionName(fname)) {
+    case 'doc': case 'dot': case 'docm': case 'dotm':
+        return 'Word';
+    case 'xls': case 'xlsm': case 'xla': case 'xlam': case 'xlt': case 'xltm': case 'xlsb':
+        return 'Excel';
+    case 'otm':
+        return 'Outlook';
+    case 'mdb': case 'accdb':
+        return 'Access';
+    default:
+        return undefined;
+    }
+};
+CommandHelper.prototype.createOffice = function(fname) {
+    var office;
+    switch (this.getAppName(fname)) {
+    case 'Word':
+        office = new Word();
+        break;
+    case 'Excel':
+        office = new Excel();
+        break;
+    case 'Outlook':
+        office = new Outlook();
+        break;
+    case 'Access':
+        office = new Access();
+        if (this.parameter.incQuery) office.addTargetType(acQuery);
+        break;
+    default:
+        office = new Dummy();
+        break;
+    }
+    office.setCmdParam(this.parameter);
+    return office;
+};
+CommandHelper.prototype.isTempFile = function(fname) {
+    return fname.substring(0, 2) == '~$';
+};
+CommandHelper.prototype.iterTarget = function(getPaths, action) {
+    var self = this;
+    foreachEnum(getPaths(), function(fl) {
+        if (self.isTempFile(fl.Name)) return false;
+        return action(fl.Path);
+    });
+};
+CommandHelper.prototype.combineImpl = function(fromDir, toDir, getPaths) {
+    if (!fso.FolderExists(fromDir)) {
+        println("directory '" + fromDir + "' not exists.");
+        return;
+    }
+    
+    if (!fso.FolderExists(toDir)) fso.CreateFolder(toDir);
+    
+    var self = this;
+    this.iterTarget(getPaths, function(fromPath) {
+        var toPath  = fso.BuildPath(toDir, fso.GetFileName(fromPath));
+        var office  = self.createOffice(fromPath);
+        var param   = self.parameter;
+        office[param.commandType](fromPath, toPath);
+    });
+};
+CommandHelper.prototype.hasCommand = function(cmdType) {
+    return cmdType in this.command
+        && this.command[cmdType] != this;
+};
+CommandHelper.prototype.runCommand = function() {
+    var cmd = this.command;
+    var cmdType = this.parameter.commandType;
+    
+    if (!this.hasCommand(cmdType)) {
+        println("command '" + cmdType + "' is undefined.");
+        return;
+    }
+    
+    var runner = function() { cmd[cmdType].apply(cmd, arguments); };
+    if (cmdType == 'help') {
+        runner();
+    }
+    else {
+        println("begin " + cmdType + "\n");
+        runner();
+        println("end");
+    }
+};
+
+function main(args) {
+    var param =
+        new CmdParam({
+            defaultParameterName: "commandType",
+            commandType: "help",
+            binary:      "bin",
+            source:      "src",
+            binbak:      new Conditional("bak"),
+            vbaproj:     false,
+            incQuery:    false,
+            dbCompact:   false
+        })
+        .parse(args);
+    
+    // It's guard for internal impl. If necessary, you can comment out to enable this feature.
+    param.binbak.flag = false;
+    param.incQuery = false;
+    
+    var h = new CommandHelper(param);
+    h.runCommand();
+}
+
+main(args);
+]]>
+</script>
+</job>
+</package>

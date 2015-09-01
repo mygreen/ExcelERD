@@ -1,0 +1,47 @@
+[ExcelERD]
+#
+# ADO API データ型定数値 マッピング ファイル
+#
+#  [ADO API データ型定数値]=[ExcelERD で表示するデータ型名]
+#
+#  http://www.microsoft.com/japan/msdn/library/default.asp?url=/japan/msdn/library/ja/jpado260/htm/mdmthcnnopen.asp
+#
+0=Empty
+2=SmallInt
+3=Integer
+4=Single
+5=Double
+6=Currency
+7=Date
+8=BSTR
+9=IDispatch
+10=Error
+11=Boolean
+12=Variant
+13=IUnknown
+14=Decimal
+16=TinyInt
+17=UnsignedTinyInt
+18=UnsignedSmallInt
+19=UnsignedInt
+20=BigInt
+21=UnsignedBigInt
+64=FileTime
+72=GUID
+128=Binary
+129=Char
+130=WChar
+131=Numeric
+132=UserDefined
+133=Date
+134=Time
+135=TimeStamp
+136=Chapter
+138=PropVariant
+139=VarNumeric
+200=VarChar
+201=LongVarChar
+202=VarWChar
+203=LongVarWChar
+204=VarBinary
+205=LongVarBinary
