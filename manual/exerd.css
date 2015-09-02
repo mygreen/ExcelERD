@@ -158,3 +158,9 @@ div.contlist {
     border-right:  8px solid #0082BF;
     border-bottom: 8px solid #0082BF;
 }
+
+span.warn {
+	color: CC0000;
+	font-weight: bold;
+}
+
