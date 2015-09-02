@@ -72,7 +72,7 @@ End Sub
 Public Sub showMessageWindow(title As String, msg As String, text As String, ByVal btnId As VbMsgBoxStyle, ByRef selectedButon As Long)
     Call initControl(title, msg, text, btnId)
     
-    Call Me.show
+    Call Me.Show
     selectedButon = m_selectedButton
     Unload Me
 

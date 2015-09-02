@@ -89,8 +89,12 @@ Public Function toColmunString(opt As ERDMODE, colLen As Integer) As String
     
     If (opt = ERDMODE.Physical) Then
         colStr = getPhysicName()
-    Else
+    ElseIf (opt = ERDMODE.Logical) Then
         colStr = getLogicName()
+    ElseIf (opt = ERDMODE.PhysicalAndLogical) Then
+        colStr = getPhysicName() & Constants.NAME_SEP & getLogicName()
+    Else
+        colStr = getPhysicName()
     End If
     
     'PK は図で表現
@@ -113,6 +117,7 @@ Public Function toColmunString(opt As ERDMODE, colLen As Integer) As String
     toColmunString = colStr
     
 End Function
+
 '
 ' データ型文字列表現(長さを含む)を返す
 '   例) NUMBER(8,2)
@@ -137,8 +142,12 @@ Public Function getColName(opt As ERDMODE) As String
     
     If opt = Logical Then
         result = getLogicName()
+    ElseIf opt = Physical Then
+        result = getPhysicName()
+    ElseIf opt = PhysicalAndLogical Then
+        result = getPhysicName() & " : " & getLogicName()
     Else
-        result = getPhysicName
+        result = getPhysicName()
     End If
 
     getColName = result
@@ -152,8 +161,12 @@ Public Function getColNameLength(opt As ERDMODE)
     result = 0
     If (opt = ERDMODE.Physical) Then
         result = getPhisicNameLen()
-    Else
+    ElseIf (opt = ERDMODE.Logical) Then
         result = getLogicNameLen()
+    ElseIf (opt = ERDMODE.PhysicalAndLogical) Then
+        result = getPhisicNameLen() + getLogicNameLen() + 3
+    Else
+        result = getPhisicNameLen()
     End If
     
     getColNameLength = result

@@ -35,6 +35,14 @@ Option Explicit
 Private prop        As Settings         '設定値保持
 Private isRunning   As Boolean
 
+Private Sub fraDDL_Click()
+
+End Sub
+
+Private Sub Label1_Click()
+
+End Sub
+
 '
 ' 画面初期化時
 '
@@ -63,6 +71,7 @@ Private Sub setAppAbout()
     lblVersion.Caption = "Version " & Constants.getAppVersion()
     lblCopyRight.Caption = Constants.APP_COPY_RIGHT
     lblInfoTo.Caption = Constants.APP_AUTHOR_MAIL
+    lblInfoTo2.Caption = Constants.APP_AUTHOR_MAIL2
 
 End Sub
 '
@@ -216,6 +225,17 @@ Private Function validateDDLOutputSettings() As Boolean
         Exit Function
     End If
     
+    'add tatsuo:コメント文字列、区切り文字のチェック
+    If Util.isBlank(txtSepStr.text) Then
+        Call Util.showDialog(Constants.ERR_REQUIRED_FIELD, Array("コメント文字列文字"))
+        Exit Function
+    End If
+    
+    If Util.isBlank(txtComment.text) Then
+        Call Util.showDialog(Constants.ERR_REQUIRED_FIELD, Array("区切文字"))
+        Exit Function
+    End If
+    
     validateDDLOutputSettings = True
     
 End Function
@@ -228,6 +248,7 @@ Private Function validateOutputPath(ByRef outputPath As String) As Boolean
     On Error GoTo errhandler
     
     Dim dirStr As String
+    Dim dirAttr, msg As String
     
     outputPath = Util.getCurrentPath(outputPath)
     
@@ -238,6 +259,16 @@ Private Function validateOutputPath(ByRef outputPath As String) As Boolean
         Else
             Exit Function
         End If
+    Else
+        ' check writable
+        On Error GoTo checkFolderError
+        
+        If Not Util.isWritableFolder(outputPath) Then
+            Call Util.showDialog(Constants.ERR_NOT_WRITE_FOLDER, Array(outputPath))
+            validateOutputPath = False
+            Exit Function
+        End If
+        
     End If
     
     validateOutputPath = True
@@ -245,11 +276,21 @@ Private Function validateOutputPath(ByRef outputPath As String) As Boolean
     Exit Function
 errhandler:
     Call Util.showDialog(Constants.ERR_GENERAL, Array(Err.Description))
+    Exit Function
+        
+checkFolderError:
+    Call Util.showDialog(Constants.ERR_NOT_WRITE_FOLDER, Array(outputPath))
+    validateOutputPath = False
+    Exit Function
+    
 End Function
 '
 '
 '
 Private Function validateAlreadyExistsFile(fileName As String) As Boolean
+    
+    Dim FSO, outFile As Object
+
     validateAlreadyExistsFile = False
 
     If Dir$(fileName) <> "" Then
@@ -259,10 +300,21 @@ Private Function validateAlreadyExistsFile(fileName As String) As Boolean
             Exit Function
         End If
     End If
+    
+    ' check write file
+    On Error GoTo checkFileError
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+    FSO.CreateTextFile(fileName, True).Close
 
     validateAlreadyExistsFile = True
+    Exit Function
+    
+checkFileError:
+    Call Util.showDialog(Constants.ERR_NOT_WRITE_FILE, Array(fileName))
+    validateAlreadyExistsFile = False
+    Exit Function
+    
 End Function
-
 
 '
 ' DDL設定を適用
@@ -307,6 +359,8 @@ Private Sub applicateUISetting()
     modelmode = 0
     If optLogicalModel.Value = True Then
         modelmode = 1
+    ElseIf optPhisicaAndLogicalModel.Value = True Then
+        modelmode = 2
     End If
     Call prop.setModelMode(modelmode)
     
@@ -365,8 +419,8 @@ Private Sub cmdCreateErd_Click()
     End If
     
     '---------- Create ERD ----------
-    If MsgBox("'" & ddlSheet.Name & "'のER図を '" & _
-                    erdSheet.Name & "'へ作成します。", _
+    If MsgBox("'" & ddlSheet.name & "'のER図を '" & _
+                    erdSheet.name & "'へ作成します。", _
                     vbYesNo Or vbQuestion, Constants.getAppInfo) = vbYes Then
         
         Call setStetusMsg("ERD 作成中･･･")
@@ -377,6 +431,8 @@ Private Sub cmdCreateErd_Click()
                 erdInfo.mode = Logical
             ElseIf optPhisicalModel = True Then
                 erdInfo.mode = Physical
+            ElseIf optPhisicaAndLogicalModel = True Then
+                erdInfo.mode = PhysicalAndLogical
             End If
             erdInfo.fontSize = prop.getFontSize
             
@@ -420,6 +476,12 @@ Private Sub cmdWriteDDL_Click()
     Dim errResult   As Long
     Dim outPath     As String
     
+    ' add tastuo
+    Dim ddlInfo As DDLInformation
+    Dim sepStr  As String
+    Dim commentStr As String
+    
+    ' add tatsuo
     Call saveDDLOutputSetting
     Call lockControls(True)
     
@@ -450,25 +512,45 @@ Private Sub cmdWriteDDL_Click()
     Set ddlSheet = Application.Workbooks( _
                     sheetInfo.bookName).Worksheets(sheetInfo.sheetName)
     
+    'add tatsuo: DDLの区切り文字などの設定値
+    Call Constants.clearDDLInfo(ddlInfo)
+    sepStr = RTrim$(txtSepStr.text)
+    commentStr = RTrim$(txtComment.text)
+    ddlInfo.sepStr = sepStr
+    ddlInfo.commentStr = commentStr
+    
     
     '---------- Create DDL ----------
-    If MsgBox("'" & ddlSheet.Name & "'のDDL定義を '" & _
+    If MsgBox("'" & ddlSheet.name & "'のDDL定義を '" & _
                     outPath & "'へ出力します。", _
                     vbYesNo Or vbQuestion, Constants.getAppInfo) = vbYes Then
         
         Call setStetusMsg("DDL 出力中･･･")
         If erdDoc.loadTableData(ddlSheet) <> -1 Then
-            Call erdDoc.writeDDL(outPath)
+            Call erdDoc.writeDDL(outPath, ddlInfo)
         End If
         
     End If
     
-    If MsgBox("終了しました。" & vbCrLf & "メモ帳で開きますか？", vbInformation Or vbYesNo, Constants.getAppInfo) _
-        = vbYes Then
-        Call Util.openFileWithNotepad(outPath)
+    ' add tatsuo: DDLファイルをノートパッドで開く
+    If chkDDLOpenWithNotepad Then
+    
+        If MsgBox("終了しました。" & vbCrLf & "メモ帳で開きますか？", vbInformation Or vbYesNo, Constants.getAppInfo) _
+            = vbYes Then
+            Call Util.openFileWithNotepad(outPath)
+        End If
+    
+    Else
+        ' add tatsuo:ファイルをOSに関連付けられたアプリけーションで開く。
+        If MsgBox("終了しました。" & vbCrLf & "OSに関連付けれられたアプリケーションで開きますか？", vbInformation Or vbYesNo, Constants.getAppInfo) _
+            = vbYes Then
+             Call Util.openFileWithOS(outPath)
+        End If
+    
     End If
     
     Call setStetusMsg("")
+    
 finally:
     Call lockControls(False)
 End Sub
@@ -547,6 +629,11 @@ Private Sub setDDLOutputSettings(newProp As Settings)
         txtDDLFile.text = .getDDLOutputFile
         txtSepStr.text = .getDDLSeqStr
         txtComment.text = .getDDLCommentStr
+        
+        If .getDDLOpenNodepad = 1 Then
+            chkDDLOpenWithNotepad = True
+        End If
+        
     End With
     Call setStetusMsg("")
 
@@ -570,6 +657,8 @@ Private Sub setUISettings(newProp As Settings)
     
     If newProp.getModelMode = 1 Then
         optLogicalModel.Value = True
+    ElseIf newProp.getModelMode = 2 Then
+        optPhisicaAndLogicalModel = True
     Else
         optPhisicalModel.Value = True
     End If
@@ -713,6 +802,9 @@ Private Sub setControlTips()
     txtDDLPath.ControlTipText = Constants.TIPS_DDL_OUTPUT_DIR
     txtDDLFile.ControlTipText = Constants.TIPS_DDL_OUTPUT_FILE
     txtSepStr.ControlTipText = Constants.TIPS_DDL_SEP_TEXT
+    'add tatsuo: コメントのヒント表示
+    txtComment.ControlTipText = Constants.TIPS_DDL_COMMENT
+
     
 End Sub
 '
@@ -739,6 +831,8 @@ End Sub
 Private Sub saveDDLOutputSetting()
     
     Dim outRel As Integer
+    Dim ddlOpenNotepad As Integer
+    
     outRel = 1
     If chkDDLRelation.Value = False Then
         outRel = 0
@@ -747,6 +841,17 @@ Private Sub saveDDLOutputSetting()
 
     Call prop.setDDLOutputPath(RTrim$(txtDDLPath.text))
     Call prop.setDDLOutputFile(RTrim$(txtDDLFile.text))
+    
+    'add tatsuo:区切り文字、コメントの文字の保存
+    Call prop.setDDLSepStr(RTrim$(txtSepStr.text))
+    Call prop.setDDLCommentStr(RTrim$(txtComment.text))
+    
+    ddlOpenNotepad = 1
+    If chkDDLOpenWithNotepad.Value = False Then
+        ddlOpenNotepad = 0
+    End If
+    Call prop.setDDLOpenNodepad(ddlOpenNotepad)
+    
     
     Call prop.saveDDLOutputSettings(ThisWorkbook)
 
@@ -764,8 +869,42 @@ End Sub
 '
 '
 Private Sub cmdBrowzDir_Click()
-   txtDDLPath.text = Util.browseForFolder(Constants.MSG_DDL_OUTPUTDIR_SELECT, 0)
+   'txtDDLPath.text = Util.browseForFolder(Constants.MSG_DDL_OUTPUTDIR_SELECT, 0)
+   txtDDLPath.text = Util.browseForFolder2(Constants.MSG_DDL_OUTPUTDIR_SELECT, 0, txtDDLPath.text)
+   
 End Sub
+'
+' DDLを開くボタンをクリックした場合
+'
+Private Sub openDDL_Click()
+    
+    Dim filePath As String
+    
+    If Util.isBlank(txtDDLPath.text) Then
+        Call Util.showDialog(Constants.ERR_REQUIRED_FIELD, Array("出力フォルダ"))
+        Exit Sub
+    End If
+    
+    If Util.isBlank(txtDDLFile.text) Then
+        Call Util.showDialog(Constants.ERR_REQUIRED_FIELD, Array("ファイル名"))
+        Exit Sub
+    End If
+    
+    filePath = Util.getCurrentPath(RTrim$(txtDDLPath.text))
+    filePath = Util.getPath(filePath) & RTrim$(txtDDLFile.text)
+    If Dir$(filePath) = "" Then
+        Call Util.showDialog(Constants.ERR_NOT_EXIST_FILE, Array(filePath))
+        Exit Sub
+    End If
+    
+    If chkDDLOpenWithNotepad Then
+        Call Util.openFileWithNotepad(filePath)
+    Else
+        Call Util.openFileWithOS(filePath)
+    End If
+    
+End Sub
+
 '
 '
 '

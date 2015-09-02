@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ExERD" default="package" basedir=".">
+
+	<target name="package" description="ExERDをパッケージングします。">
+		<echo>ExERDをパッケージングしています。</echo>
+		
+		<property name="target.dir" value="ExERD" />
+		<property name="package.dir" value="package" />
+		
+		<!-- ディレクトリの作成 -->
+		<mkdir dir="${package.dir}" />
+		<delete dir="${package.dir}/${target.dir}" quiet="true" />
+		<mkdir dir="${package.dir}/${target.dir}" />
+		
+		<!-- ファイルのコピー -->
+		<copy file="bin/ExERD.xlsm" todir="${package.dir}/${target.dir}" />
+		<copy file="bin/ExERD.ini" todir="${package.dir}/${target.dir}" />
+		<copy file="bin/datatype.dap" todir="${package.dir}/${target.dir}" />
+		<copy file="LICENSE" todir="${package.dir}/${target.dir}" />
+		
+		<!-- マニュアルのコピー -->
+		<mkdir dir="${package.dir}/${target.dir}/manual" />
+		<copy todir="${package.dir}/${target.dir}/manual">
+			<fileset dir="manual"/>
+		</copy>
+		
+		<!-- 圧縮 -->
+		<zip destfile="${package.dir}/${target.dir}.zip" basedir="${package.dir}/${target.dir}"/>
+		
+		
+	</target>
+
+</project>

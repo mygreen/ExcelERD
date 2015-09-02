@@ -81,7 +81,7 @@ Public Sub excelErMain()
     Dim fm As New frmMain
     On Error GoTo MailErrHandler
     
-    fm.show
+    fm.Show
     
     Exit Sub
 MailErrHandler:

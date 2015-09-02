@@ -53,7 +53,7 @@ Public Sub showReverseDialog(Settings As Settings, Optional ByRef dataTypeFileNa
     End If
     
     Call initControl
-    Call Me.show(vbModal)
+    Call Me.Show(vbModal)
     Unload Me
     
 End Sub

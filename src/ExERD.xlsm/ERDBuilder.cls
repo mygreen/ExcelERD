@@ -62,9 +62,28 @@ Private Function getSheet() As Excel.Worksheet
 End Function
 '
 ' 図の横幅を取得
+' ・テキストボックスの幅もこの値を使用する
 '
 Public Function getDiagramWidth(table As ErTable, mode As ERDMODE) As Single
-    getDiagramWidth = (table.getColStringLength(mode) * (getFontSize() * 0.7))
+    Dim width As Single
+    
+    width = 0#
+    If mode = PhysicalAndLogical Then
+       
+        width = width + (table.getColStringLength(Physical) * (getFontSize() * 0.7))
+        width = width + (table.getColStringLength(Logical) * (getFontSize() * 0.7))
+        width = width + (getFontSize() * 0.7) * 3
+        width = width * 0.75
+    ElseIf mode = Logical Then
+        width = (table.getColStringLength(Logical) * (getFontSize() * 0.7))
+    ElseIf mode = Physical Then
+        width = (table.getColStringLength(Physical) * (getFontSize() * 0.7))
+    Else
+        width = (table.getColStringLength(Physical) * (getFontSize() * 0.7))
+    End If
+    
+    getDiagramWidth = width
+    
 End Function
 '
 ' 図の高さを取得
@@ -82,7 +101,16 @@ End Function
 ' フォントサイズから行間の高さを得る
 '
 Private Function getCharHeight() As Single
-    getCharHeight = getFontSize() * 1.4
+    Dim version As Single
+    
+    version = Util.getExcelVersion()
+    If version >= Constants.EXCEL2007 Then
+        getCharHeight = getFontSize() * 1.7
+    ElseIf version >= Constants.EXCEL2000 Then
+        getCharHeight = getFontSize() * 1.4
+    Else
+        getCharHeight = getFontSize() * 1.4
+    End If
 End Function
 '
 ' Shapeの名前の長さに制限があるため、制限を越えた場合、
@@ -116,10 +144,10 @@ End Function
 '
 Public Sub createRelation(parentTabele As String, childTable As String, isDepend As Boolean)
     Dim sheet As Excel.Worksheet
-    Dim beginTableGroup As Shape
-    Dim beginShape As Shape
-    Dim endTableGroup As Shape
-    Dim endShape As Shape
+    Dim beginTableGroup As shape
+    Dim beginShape As shape
+    Dim endTableGroup As shape
+    Dim endShape As shape
     
     Dim i As Integer
     
@@ -137,11 +165,11 @@ Public Sub createRelation(parentTabele As String, childTable As String, isDepend
     Set endTableGroup = sheet.Shapes(createShapeName(TABLE_PREFIX & Constants.keyRule(childTable)))
     
     sheet.Shapes.AddConnector(msoConnectorElbow, 100#, 100#, 200#, 200#).Select
-    Selection.Name = createShapeName(RELATION_PREFIX & parentTabele & "_" & Constants.keyRule(childTable))
+    Selection.name = createShapeName(RELATION_PREFIX & parentTabele & "_" & Constants.keyRule(childTable))
     
     For i = 1 To beginTableGroup.GroupItems.Count
         Set beginShape = beginTableGroup.GroupItems(i)
-        If Constants.isEqualKey(beginShape.Name, FRAME_PREFIX & parentTabele) Then
+        If Constants.isEqualKey(beginShape.name, FRAME_PREFIX & parentTabele) Then
             Exit For
         End If
         Set beginShape = Nothing
@@ -149,7 +177,7 @@ Public Sub createRelation(parentTabele As String, childTable As String, isDepend
     
     For i = 1 To endTableGroup.GroupItems.Count
         Set endShape = endTableGroup.GroupItems(i)
-        If Constants.isEqualKey(endShape.Name, createShapeName(TITLE_PREFIX & Constants.keyRule(childTable))) Then
+        If Constants.isEqualKey(endShape.name, createShapeName(TITLE_PREFIX & Constants.keyRule(childTable))) Then
             Exit For
         End If
         Set endShape = Nothing
@@ -210,6 +238,10 @@ Public Sub createTable(ByVal mode As ERDMODE, ByRef left As Single, ByRef top As
     Dim height As Single
     Dim adjust As Single
     
+    Dim oldNamePrefix As String
+    Dim gName As String
+    Dim gShape, gItem As Object
+    
     width = getDiagramWidth(tb, mode)
     height = getDiagramHeight(tb)
     
@@ -226,12 +258,30 @@ Public Sub createTable(ByVal mode As ERDMODE, ByRef left As Single, ByRef top As
     frameName = createShapeName(FRAME_PREFIX & Constants.keyRule(tb.getPhisicName))
     pkLineName = createShapeName(PKLINE_PREFIX & Constants.keyRule(tb.getPhisicName))
     
+    ' 重複しているオブジェクト名の変更
+    ' Excel2007以降の場合、名前が重複していると、最後のグループ化に失敗するので名称を変更する。
+    ' この修正により、既にRD図が存在している場合、テーブルの作成は成功するが、関連はおかしいままになるので注意
+    '
+    If Util.getExcelVersion >= Constants.EXCEL2007 Then
+        gName = createShapeName(TABLE_PREFIX & Constants.keyRule(tb.getPhisicName))
+        'random prefix
+        oldNamePrefix = "_" & DateDiff("s", #1/1/1970#, Now())
+        For Each gShape In ActiveSheet.Shapes
+            If gShape.name = gName Then
+                For Each gItem In gShape.GroupItems
+                    gItem.name = gItem.name & oldNamePrefix
+                Next gItem
+            End If
+        Next gShape
+    End If
+    
     'Debug.Print tb.getPhisicName
     Call Log.info(tb.getPhisicName() & " を作成します")
     
     '== TITLE LABEL ==
     Call sheet.Shapes.AddTextbox(msoTextOrientationHorizontal, left, top, width, getCharHeight).Select
-    Selection.Name = titleName
+    
+    Selection.name = titleName
     ReDim Preserve groupArry(groupId)
     groupArry(groupId) = titleName
     groupId = groupId + 1
@@ -246,8 +296,9 @@ Public Sub createTable(ByVal mode As ERDMODE, ByRef left As Single, ByRef top As
         .ShapeRange.line.Style = msoLineSingle
         .ShapeRange.line.Transparency = 0#
         .ShapeRange.line.Visible = msoFalse
+        .ShapeRange.Shadow.Visible = msoFalse
         With .Font
-            .Name = "ＭＳ ゴシック"
+            .name = "ＭＳ ゴシック"
             .size = getFontSize()
             .Strikethrough = False
             .Superscript = False
@@ -257,7 +308,20 @@ Public Sub createTable(ByVal mode As ERDMODE, ByRef left As Single, ByRef top As
             .Underline = xlUnderlineStyleNone
             .ColorIndex = xlAutomatic
         End With
+        
     End With
+    
+    If Util.getExcelVersion() >= Constants.EXCEL2007 Then
+        With Selection.ShapeRange(1)
+            .TextFrame2.TextRange.LanguageID = msoLanguageIDJapanese
+            .TextFrame2.TextRange.Font.name = "ＭＳ ゴシック"
+            .TextFrame2.TextRange.Font.NameFarEast = "ＭＳ ゴシック"
+            .TextFrame2.TextRange.Font.NameAscii = "ＭＳ ゴシック"
+            .Fill.Visible = msoFalse
+        End With
+        
+    End If
+    
     top = top + getCharHeight() + getFontSize() / 2
     
     Dim colId As Integer
@@ -269,12 +333,13 @@ Public Sub createTable(ByVal mode As ERDMODE, ByRef left As Single, ByRef top As
     colTop = top + (getFontSize() / 2)
     colLeft = left + (getFontSize() / 2)
     
+    ' == COLUMN INFO ==
     Call tb.sortColumn
     For colId = 0 To tb.getColCount
         Call sheet.Shapes.AddTextbox(msoTextOrientationHorizontal, colLeft, colTop, width, colHeight).Select
-        Selection.Name = createShapeName(COL_PREFIX & Constants.keyRule(tb.getPhisicName & "_" & CStr(colId)))
+        Selection.name = createShapeName(COL_PREFIX & Constants.keyRule(tb.getPhisicName & "_" & CStr(colId)))
         ReDim Preserve groupArry(groupId)
-        groupArry(groupId) = Selection.Name
+        groupArry(groupId) = Selection.name
         groupId = groupId + 1
     
         Selection.Characters.text = tb.getColumnString(mode, colId)
@@ -286,8 +351,9 @@ Public Sub createTable(ByVal mode As ERDMODE, ByRef left As Single, ByRef top As
         'Selection.ShapeRange.line.Style = msoLineSingle
         Selection.ShapeRange.line.Transparency = 0#
         Selection.ShapeRange.line.Visible = msoFalse
+        Selection.ShapeRange.Shadow.Visible = msoFalse
         With Selection.Font
-            .Name = "ＭＳ ゴシック"
+            .name = "ＭＳ ゴシック"
             .size = getFontSize()
             .Strikethrough = False
             .Superscript = False
@@ -297,6 +363,16 @@ Public Sub createTable(ByVal mode As ERDMODE, ByRef left As Single, ByRef top As
             .Underline = xlUnderlineStyleNone
             .ColorIndex = xlAutomatic
         End With
+        
+        If Util.getExcelVersion() >= Constants.EXCEL2007 Then
+            With Selection.ShapeRange(1)
+                .TextFrame2.TextRange.LanguageID = msoLanguageIDJapanese
+                .TextFrame2.TextRange.Font.name = "ＭＳ ゴシック"
+                .TextFrame2.TextRange.Font.NameFarEast = "ＭＳ ゴシック"
+                .TextFrame2.TextRange.Font.NameAscii = "ＭＳ ゴシック"
+                .Fill.Visible = msoFalse
+            End With
+        End If
 
         colTop = colTop + colHeight
     Next
@@ -304,7 +380,18 @@ Public Sub createTable(ByVal mode As ERDMODE, ByRef left As Single, ByRef top As
     '== FRAME ==
     height = colTop - top
     Call sheet.Shapes.AddShape(msoShapeRoundedRectangle, left, top, width, height).Select
-    Selection.Name = frameName
+    
+    ' for excel2007
+    With Selection.ShapeRange(1)
+        .Fill.ForeColor.RGB = RGB(255, 255, 255)
+        .line.Weight = 0.75
+        .line.DashStyle = msoLineSolid
+        .line.Style = msoLineSingle
+        .Shadow.Visible = msoTrue
+        .Shadow.Type = msoShadow14
+    End With
+    
+    Selection.name = frameName
     ReDim Preserve groupArry(groupId)
     groupArry(groupId) = frameName
     groupId = groupId + 1
@@ -327,9 +414,9 @@ Public Sub createTable(ByVal mode As ERDMODE, ByRef left As Single, ByRef top As
         lineTop = top + (getFontSize() / 2) + (colHeight * tb.getPKCount)
         
         Call sheet.Shapes.AddLine(left, lineTop, left + width, lineTop).Select
-        Selection.Name = pkLineName
+        Selection.name = pkLineName
         ReDim Preserve groupArry(groupId)
-        groupArry(groupId) = Selection.Name
+        groupArry(groupId) = Selection.name
         groupId = groupId + 1
     End If
     
@@ -349,7 +436,7 @@ Public Sub createTable(ByVal mode As ERDMODE, ByRef left As Single, ByRef top As
     
     sheet.Shapes.Range(parmArray).Select
     Selection.ShapeRange.Group.Select
-    Selection.Name = createShapeName(TABLE_PREFIX & Constants.keyRule(tb.getPhisicName))
+    Selection.name = createShapeName(TABLE_PREFIX & Constants.keyRule(tb.getPhisicName))
 End Sub
 
 ' ==== アクセサ ====

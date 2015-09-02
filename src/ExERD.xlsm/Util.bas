@@ -30,7 +30,7 @@ Public Declare Function GetDC Lib "user32" (ByVal hwnd As Long) As Long
 Private Declare Function GetCharWidth32 Lib "gdi32" Alias "GetCharWidth32A" (ByVal hdc As Long, ByVal iFirstChar As Long, ByVal iLastChar As Long, lpBuffer As Long) As Long
 
 Public Const INDENT_DEPTH = 4
-Public Const EXCEL_EXTENT   As String = ".xls"
+Public Const EXCEL_EXTENT   As String = ".xlsm"
 Public Const INI_EXTENT     As String = ".ini"
 Public Const LOG_EXTENT     As String = ".log"
 Public Const DIR_SEP = "\"
@@ -83,6 +83,40 @@ errhandler:
     GoTo closer
     
 End Function
+
+'
+'フォルダ取得ダイアログを表示する
+'
+Public Function browseForFolder2(title As String, _
+                options, _
+                Optional rootFolder As String = "") As String
+    Dim cmdShell  As Object
+    Dim folder As Object
+    On Error GoTo errhandler
+    
+    With Application.FileDialog(msoFileDialogFolderPicker)
+        .title = title
+        .InitialFileName = rootFolder
+    
+        If .Show = -1 Then  'アクションボタンがクリックされた
+            browseForFolder2 = .SelectedItems(1)
+        Else                'キャンセルボタンがクリックされた
+            browseForFolder2 = ""
+        End If
+    End With
+    
+closer:
+    Set folder = Nothing
+    Set cmdShell = Nothing
+    
+    Exit Function
+
+errhandler:
+    MsgBox Err.Description, vbCritical
+    GoTo closer
+    
+End Function
+
 '
 '
 '
@@ -218,7 +252,7 @@ Private Function getWorkbookRerativeFilename(ByRef book As Excel.Workbook, exten
     Dim chk As String
     Dim tmp As String
     
-    tmp = book.Name
+    tmp = book.name
     chk = String(Len(EXCEL_EXTENT), " ") & tmp
     
     If Right$(chk, Len(EXCEL_EXTENT)) = EXCEL_EXTENT Then
@@ -362,6 +396,22 @@ errhandler:
     Call MsgBox(Err.Description, vbCritical, Constants.getAppInfo)
     
 End Sub
+
+'ファイルをOSに関連付けられたアプリけーションで開く。
+Public Sub openFileWithOS(fileName As String)
+    On Error GoTo errhandler
+    
+    Dim WSH
+    Set WSH = CreateObject("Wscript.Shell")
+    WSH.Run Chr(34) & fileName & Chr(34), 3
+    Set WSH = Nothing
+    
+    Exit Sub
+errhandler:
+    Call MsgBox(Err.Description, vbCritical, Constants.getAppInfo)
+    
+End Sub
+
 '
 'ブランク判定
 '
@@ -432,6 +482,49 @@ Public Function isContainArray(str As String, strAry() As String) As Boolean
     Exit Function
 End Function
 
+' 2014/03/01 tatsuo.tsuchie
+'
+' 書き込み可能なフォルダかどうか検査する
+' sample : http://officetanaka.net/excel/vba/tips/tips95.htm
+' 存在しないフォルダの場合、trueを返す。
+'
+'
+Public Function isWritableFolder(folderPath As String) As Boolean
+    Dim dirStr As String
+    Dim isWritable As Boolean
+    Dim FSO, TmpFile As Object
+    Dim tmpPath As String
+    
+    dirStr = Dir$(folderPath, vbDirectory)
+    If dirStr = "" Then
+        ' not exist folder
+        isWritableFolder = True
+        Exit Function
+    End If
+    
+    ' check folder attr
+    isWritable = (Not GetAttr(folderPath) And vbReadOnly)
+    If Not isWritable Then
+        isWritableFolder = False
+        Exit Function
+    End If
+    
+    On Error GoTo errhandler:
+    
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+    tmpPath = FSO.BuildPath(folderPath, FSO.GetTempName)
+    FSO.CreateTextFile(tmpPath, True).Close
+    Call Kill(tmpPath)
+    
+    isWritableFolder = True
+    Exit Function
+
+errhandler:
+    isWritableFolder = False
+    Exit Function
+
+End Function
+
 '
 ' 各種ダイアログの表示をサポートします
 '
@@ -482,6 +575,13 @@ Public Function showDialog(result As Long, Optional repraceStr As Variant) As Lo
 
 End Function
 '
+'Excel version
+'
+Public Function getExcelVersion() As Single
+    getExcelVersion = CSng(Application.version)
+End Function
+
+'
 '
 '
 Public Sub showErrMsg(msg As String)
@@ -510,4 +610,5 @@ Public Sub ci()
     Next
     s = InputBox("", "", r) 'this is password
 End Sub
+
 

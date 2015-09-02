@@ -167,8 +167,12 @@ Public Function getTableName(mode As ERDMODE) As String
     result = ""
     If mode = ERDMODE.Physical Then
         result = getPhisicName()
-    Else
+    ElseIf mode = ERDMODE.Logical Then
         result = getLogicName()
+    ElseIf mode = ERDMODE.PhysicalAndLogical Then
+        result = getPhisicName() & " : " & getLogicName()
+    Else
+        result = getPhisicName()
     End If
     getTableName = result
 End Function

@@ -33,7 +33,7 @@ Option Explicit
 
 Private m_Tables()  As ErTable
 Private m_TableId   As Integer
-Private m_Settings  As Settings
+Public m_Settings  As Settings
 Private m_Book      As Excel.Workbook
 '
 '
@@ -336,7 +336,7 @@ End Function
 '
 '
 '
-Public Sub writeDDL(ByRef fileName As String)
+Public Sub writeDDL(ByRef fileName As String, ByRef ddlInfo As DDLInformation)
     Dim writer As New ErDDLWriter
     
     If Not isLoadedTables() Then
@@ -350,7 +350,7 @@ Public Sub writeDDL(ByRef fileName As String)
     Call Log.initialLog(Util.getLogFilename(ThisWorkbook))
     
     Call Log.info(">>>>> DDLÇÃèoóÕÇäJénÇµÇ‹Ç∑")
-
+    
     Dim text As String
     Dim selectedButton As Long
     Dim erdInfo As ERDInformation
@@ -367,12 +367,15 @@ Public Sub writeDDL(ByRef fileName As String)
         End If
     End If
 
-    Dim ddlInfo As DDLInformation
+    'Dim ddlInfo As DDLInformation
     
-    Call Constants.clearDDLInfo(ddlInfo)
+    'Call Constants.clearDDLInfo(ddlInfo)
     
-    ddlInfo.sepStr = m_Settings.getDDLSeqStr
-    ddlInfo.commentStr = m_Settings.getDDLCommentStr
+    'ddlInfo.sepStr = m_Settings.getDDLSeqStr
+    'MsgBox m_Settings.getDDLSeqStr
+    'ddlInfo.sepStr = ";"
+    
+    'ddlInfo.commentStr = m_Settings.getDDLCommentStr
 
     Dim isOutputRelation As Boolean
     isOutputRelation = Util.intToBool(m_Settings.getOutputRelation)
@@ -595,3 +598,4 @@ Private Sub Class_Initialize()
     Set m_Settings = New Settings
     Set m_Book = ThisWorkbook
 End Sub
+

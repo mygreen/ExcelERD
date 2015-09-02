@@ -42,6 +42,7 @@ Option Explicit
 ' 2005/10/12 ver 0.9.3 ˆ—‚Ì“r’†‚ÅƒLƒƒƒ“ƒZƒ‹‚·‚é‹@”\‚ğ’Ç‰Á
 ' 2005/10/12 ver 1.0.0 ODBCŒo—R‚ÅƒŠƒo[ƒXƒGƒ“ƒWƒjƒAƒŠƒ“ƒO‚·‚é‹@”\‚ğ’Ç‰Á
 ' 2007/05/08 ver 1.0.1 DDLo—ÍAåƒL[–¢İ’è‚ÅƒGƒ‰[”­¶‚ğC³
+' 2015/09/02 ver 1.1   Excel2007/2010‚É‘Î‰
 
 '----------------------------------------
 ' APPLICATION INFORMATION
@@ -49,11 +50,12 @@ Option Explicit
 Public Const APP_NAME           As String = "ExcelERD"
 Public Const APP_TITLE          As String = "ExcelERD"
 Public Const APP_MAJOR_VER      As Integer = 1
-Public Const APP_MINOR_VER      As Integer = 0
-Public Const APP_RIVISION       As Integer = 1
-Public Const APP_LAST_MODEFIED  As String = "2007/05/08 12:05:28 "
-Public Const APP_COPY_RIGHT     As String = "copyright(C) 2005 YAGI Hiroto All Right Reserved"
-Public Const APP_AUTHOR_MAIL    As String = "piroto@a-net.email.ne.jp"
+Public Const APP_MINOR_VER      As Integer = 1
+Public Const APP_RIVISION       As Integer = 0
+Public Const APP_LAST_MODEFIED  As String = "2015/09/02 13:00:00 "
+Public Const APP_COPY_RIGHT     As String = "Copyright(C) 2005-2015 YAGI Hiroto, mygreen All Rights Reserved"
+Public Const APP_AUTHOR_MAIL    As String = "YAGI Hiroto : piroto@a-net.email.ne.jp"
+Public Const APP_AUTHOR_MAIL2   As String = "mygreen : https://github.com/mygreen/ExcelERD/issues"
 
 '----------------------------------------
 ' APPLICATION VARIABLES
@@ -147,8 +149,8 @@ Public Const TIPS_WIDTH_LIMIT               As String = "ƒ‚ƒfƒ‹‚ÌÜ‚è•Ô‚µ–ÚˆÀ‚ğ
 
 Public Const TIPS_DDL_OUTPUT_DIR            As String = "DDLo—ÍæƒtƒHƒ‹ƒ_‚ğw’è‚µ‚Ä‚­‚¾‚³‚¢"
 Public Const TIPS_DDL_OUTPUT_FILE           As String = "DDLƒtƒ@ƒCƒ‹–¼‚ğw’è‚µ‚Ä‚­‚¾‚³‚¢"
-Public Const TIPS_DDL_COMMENT               As String = "DDL‚Éo—Í‚·‚éƒRƒƒ“ƒg•¶š—ñ‚ğw’è‚µ‚Ä‚­‚¾‚³‚¢"
-Public Const TIPS_DDL_SEP_TEXT              As String = "CREATE TABLE DDL‚Ì‹æØ‚è•¶š—ñ‚ğw’è‚µ‚Ä‚­‚¾‚³‚¢ Oracle‚Å‚ÍA""/""ASQLServer‚Å‚Í""GO""‚È‚Ç"
+Public Const TIPS_DDL_COMMENT               As String = "DDL‚Éo—Í‚·‚és’PˆÊ‚ÌƒRƒƒ“ƒg•¶š—ñ‚ğw’è‚µ‚Ä‚­‚¾‚³‚¢B""--"" ‚È‚ÇB"
+Public Const TIPS_DDL_SEP_TEXT              As String = "CREATE TABLE DDL‚Ì‹æØ‚è•¶š—ñ‚ğw’è‚µ‚Ä‚­‚¾‚³‚¢B Oracle‚Å‚ÍA""/""ASQLServer‚Å‚Í""GO""‚È‚Ç"
 
 '
 Public Const MSG_PROBLEM_DETECT             As String = "ˆÈ‰º‚Ì–â‘è‚ªŒ©‚Â‚©‚è‚Ü‚µ‚½B" & vbCrLf & "ˆ—‚ğ‘±s‚µ‚Ü‚·‚©H"
@@ -184,6 +186,10 @@ Public Const ERR_REQUIRED_RANGE                 As Long = Util.ERR_MASK + &H7&
 Public Const ERR_NO_LOAD_DDL                    As Long = Util.ERR_MASK + &H8&
 Public Const ERR_NO_TABLE                       As Long = Util.ERR_MASK + &H9&
 Public Const ERR_NO_DATATYPEFILE                As Long = Util.ERR_MASK + &H10&
+Public Const ERR_NOT_WRITE_FOLDER               As Long = Util.ERR_MASK + &HA&
+Public Const ERR_NOT_WRITE_FILE                 As Long = Util.ERR_MASK + &HB&
+Public Const ERR_NOT_EXIST_FILE                 As Long = Util.ERR_MASK + &HC&
+
 'ODBC
 Public Const ODBC_SUCCESS                       As Long = Util.NO_ERROR
 Public Const ERR_ODBC_CONNECT_FAIL              As Long = Util.ERR_MASK + &H21&
@@ -202,6 +208,16 @@ Public Const Q_YN_CREATE_DIR                    As Long = Util.QUESTION_YES_NO_M
 Public Const Q_YN_OVERWRITE_FILE                As Long = Util.QUESTION_YES_NO_MASK + &H2&
 Public Const Q_YN_CANCEL_PROC                   As Long = Util.QUESTION_YES_NO_MASK + &H3&
 
+' Excel Version
+Public Const EXCEL2000                          As Single = 9#
+Public Const EXCEL2002                          As Single = 10#
+Public Const EXCEL2003                          As Single = 11#
+Public Const EXCEL2007                          As Single = 12#
+Public Const EXCEL2010                          As Single = 14#
+Public Const EXCEL2013                          As Single = 15#
+
+Public Const NAME_SEP                           As String = " : "
+
 '----------------------------------------
 ' APPLICATION ENUM AND TYPES
 '----------------------------------------
@@ -210,6 +226,7 @@ Public Const Q_YN_CANCEL_PROC                   As Long = Util.QUESTION_YES_NO_M
 Public Enum ERDMODE
     Physical = &H1
     Logical = &H2
+    PhysicalAndLogical = &H3
 End Enum
 
 ' ƒRƒ}ƒ“ƒhó‘Ô
@@ -325,6 +342,12 @@ Public Function getMessage(ByVal msgId As Long) As String
             result = "[{1}] ‚ÍŠù‚É‘¶İ‚µ‚Ü‚·Bã‘‚«‚µ‚Ü‚·‚©H"
         Case Q_YN_CANCEL_PROC
             result = "ˆ—‚ğƒLƒƒƒ“ƒZƒ‹‚µ‚Ä‚æ‚ë‚µ‚¢‚Å‚·‚©H"
+        Case ERR_NOT_WRITE_FOLDER
+            result = "ƒtƒHƒ‹ƒ_ [{1}] ‚Í‘‚«‚İ‰Â”\‚Å‚Í‚ ‚è‚Ü‚¹‚ñB"
+        Case ERR_NOT_WRITE_FILE
+            result = "ƒtƒ@ƒCƒ‹ [{1}] ‚Í‘‚«‚İ‰Â”\‚Å‚Í‚ ‚è‚Ü‚¹‚ñB"
+        Case ERR_NOT_EXIST_FILE
+            result = "ƒtƒ@ƒCƒ‹ [{1}] ‚Í‘¶İ‚µ‚Ü‚¹‚ñB"
     End Select
     
     getMessage = result
