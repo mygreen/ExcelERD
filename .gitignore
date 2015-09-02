@@ -1,4 +1,11 @@
+## package
+/package
+
 ## for tmporary file.
 *~
 ~*
 \#*\#
+
+## for log file
+/*/*.log
+
