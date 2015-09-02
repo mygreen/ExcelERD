@@ -42,6 +42,7 @@ Private colmns() As ErColumun
 Private dependTables() As String
 Private dependRelations() As Boolean
 
+
 '
 ' カラム数を返す
 '
@@ -105,14 +106,14 @@ End Sub
 '
 ' テーブルクラスにカラムを追加
 '
-Public Sub addColObj(ByVal colobj As ErColumun)
+Public Sub addColObj(ByVal colObj As ErColumun)
     Dim colId As Integer
     colId = getColCount
     
     ReDim Preserve colmns(colId)
-    Set colmns(colId) = colobj
+    Set colmns(colId) = colObj
     
-    If colobj.isDependent Then
+    If colObj.isDependent Then
         Call setDependent(True)
     End If
     
@@ -347,6 +348,7 @@ End Sub
 Public Function isDependent() As Boolean
     isDependent = m_IsDependent
 End Function
+
 '
 '
 '

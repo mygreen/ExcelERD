@@ -252,7 +252,7 @@ Private Function getWorkbookRerativeFilename(ByRef book As Excel.Workbook, exten
     Dim chk As String
     Dim tmp As String
     
-    tmp = book.name
+    tmp = book.Name
     chk = String(Len(EXCEL_EXTENT), " ") & tmp
     
     If Right$(chk, Len(EXCEL_EXTENT)) = EXCEL_EXTENT Then

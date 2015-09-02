@@ -52,7 +52,7 @@ Private Sub initForm()
     Dim i As Integer
     
     For i = 1 To Application.Workbooks.Count
-        Call cmbBooks.AddItem(Application.Workbooks(i).name, i - 1)
+        Call cmbBooks.AddItem(Application.Workbooks(i).Name, i - 1)
     Next
 
 End Sub
@@ -76,14 +76,14 @@ Private Sub initControl(mode As ShowMode)
 
     Dim i As Integer
     For i = 1 To Application.Workbooks.Count
-        Call cmbBooks.AddItem(Application.Workbooks(i).name, i - 1)
+        Call cmbBooks.AddItem(Application.Workbooks(i).Name, i - 1)
     Next
     
     If Application.Workbooks.Count > 0 Then
         If Application.Workbooks.Count >= 2 Then
-            cmbBooks.text = Application.Workbooks(2).name
+            cmbBooks.text = Application.Workbooks(2).Name
         Else
-            cmbBooks.text = Application.Workbooks(1).name
+            cmbBooks.text = Application.Workbooks(1).Name
         End If
     End If
     
@@ -140,7 +140,7 @@ Private Sub cmbBooks_Change()
     
     lstSheets.clear
     For i = 1 To book.Worksheets.Count
-        Call lstSheets.AddItem(book.Worksheets(i).name, i - 1)
+        Call lstSheets.AddItem(book.Worksheets(i).Name, i - 1)
     Next
     
     If (m_mode = ShowMode.ERD_SELECTEION) Or (m_mode = ShowMode.DDL_HEAD_SELECTION) Then

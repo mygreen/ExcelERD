@@ -35,14 +35,6 @@ Option Explicit
 Private prop        As Settings         '設定値保持
 Private isRunning   As Boolean
 
-Private Sub fraDDL_Click()
-
-End Sub
-
-Private Sub Label1_Click()
-
-End Sub
-
 '
 ' 画面初期化時
 '
@@ -354,8 +346,9 @@ End Sub
 ' ユーザインターフェース設定値を適用
 '
 Private Sub applicateUISetting()
-    Dim modelmode As Integer
     
+    ' 出力モデル
+    Dim modelmode As Integer
     modelmode = 0
     If optLogicalModel.Value = True Then
         modelmode = 1
@@ -364,12 +357,22 @@ Private Sub applicateUISetting()
     End If
     Call prop.setModelMode(modelmode)
     
+    ' 出力オプション - リレーション
     Dim outRel As Integer
     outRel = 1
     If chkRelation.Value = False Then
         outRel = 0
     End If
     Call prop.setOutputRelation(outRel)
+    
+    ' 出力オプション - 主キーなどの省略
+    Dim outEli As Integer
+    outEli = 1
+    If chkElision.Value = False Then
+        outEli = 0
+    End If
+    Call prop.setOutputElision(outEli)
+    
     
 End Sub
 '
@@ -419,8 +422,8 @@ Private Sub cmdCreateErd_Click()
     End If
     
     '---------- Create ERD ----------
-    If MsgBox("'" & ddlSheet.name & "'のER図を '" & _
-                    erdSheet.name & "'へ作成します。", _
+    If MsgBox("'" & ddlSheet.Name & "'のER図を '" & _
+                    erdSheet.Name & "'へ作成します。", _
                     vbYesNo Or vbQuestion, Constants.getAppInfo) = vbYes Then
         
         Call setStetusMsg("ERD 作成中･･･")
@@ -521,7 +524,7 @@ Private Sub cmdWriteDDL_Click()
     
     
     '---------- Create DDL ----------
-    If MsgBox("'" & ddlSheet.name & "'のDDL定義を '" & _
+    If MsgBox("'" & ddlSheet.Name & "'のDDL定義を '" & _
                     outPath & "'へ出力します。", _
                     vbYesNo Or vbQuestion, Constants.getAppInfo) = vbYes Then
         
@@ -655,6 +658,7 @@ End Sub
 '
 Private Sub setUISettings(newProp As Settings)
     
+    ' モデルの種類の設定
     If newProp.getModelMode = 1 Then
         optLogicalModel.Value = True
     ElseIf newProp.getModelMode = 2 Then
@@ -663,14 +667,24 @@ Private Sub setUISettings(newProp As Settings)
         optPhisicalModel.Value = True
     End If
     
+    ' 出力オプション - リレーションの出力の設定
     If newProp.getOutputRelation = 0 Then
         chkRelation.Value = False
+        ' DDLの外部キー制約との連動
         chkDDLRelation.Value = False
     Else
         chkRelation.Value = True
+        ' DDLの外部キー制約との連動
         chkDDLRelation.Value = True
     End If
     
+    ' 出力オプション - 主キーなどの省略の設定
+    If newProp.getOutputElision = 0 Then
+        chkElision.Value = False
+    Else
+        chkElision.Value = True
+    End If
+
     
 End Sub
 '
@@ -776,6 +790,7 @@ Private Sub setControlTips()
     
     fraModelKind.ControlTipText = Constants.TIPS_MODEL_KIND
     chkRelation.ControlTipText = Constants.TIPS_RELATION
+    chkElision.ControlTipText = Constants.TIPS_ELISION
     txtDatatypeFile.ControlTipText = Constants.TIPS_DATATYPEFILE
         
     txtStartRow.ControlTipText = Constants.TIPS_START_ROW

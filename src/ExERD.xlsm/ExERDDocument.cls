@@ -397,6 +397,7 @@ End Sub
 Public Sub drawERD(ByRef sheet As Excel.Worksheet, erdInfo As ERDInformation)
     Dim builder As New ERDBuilder
     Dim i As Integer
+    Dim j As Integer
     
     If Not isLoadedTables() Then
         Call Util.showDialog(ERR_NO_LOAD_DDL)
@@ -445,6 +446,68 @@ Public Sub drawERD(ByRef sheet As Excel.Worksheet, erdInfo As ERDInformation)
     top = marginTop
     left = marginLeft
     
+    ' 主キー、外部キーを省略する場合
+    If Util.intToBool(m_Settings.getOutputElision) Then
+        Dim newTables()  As ErTable
+        ReDim newTables(UBound(m_Tables))
+        
+        For i = LBound(m_Tables) To UBound(m_Tables)
+            If m_Tables(i).getPKCount() > 0 Or m_Tables(i).getDependTableCount() > 0 Then
+                '主キー、関連を持つ場合
+                Dim tblObj As ErTable
+                Dim colObj As ErColumun
+                Dim elised As Boolean: elised = False
+                
+                
+                ' テーブル情報のコピー
+                Set tblObj = New ErTable
+                Call tblObj.setPhisicName(m_Tables(i).getPhisicName)
+                Call tblObj.setLogicName(m_Tables(i).getLogicName)
+                Call tblObj.setView(m_Tables(i).isView)
+                Call tblObj.setDependent(m_Tables(i).isDependent)
+                
+                ' 依存情報のコピー
+                For j = 0 To (m_Tables(i).getDependTableCount() - 1)
+                    Dim depentTable As String
+                    Dim dependRelation As Boolean
+                    
+                    depentTable = m_Tables(i).getDependenceTable(j)
+                    dependRelation = m_Tables(i).getDependRelation(j)
+                    Call tblObj.addDependenceTable(depentTable, dependRelation)
+                Next
+                
+                ' 列情報のコピー
+                For j = 0 To m_Tables(i).getColCount()
+                    Set colObj = m_Tables(i).getColumn(j)
+                    If colObj.isPk Or colObj.isFk Then
+                        Call tblObj.addColObj(colObj)
+                    Else
+                        elised = True
+                    End If
+                Next
+                
+                ' 列を省略した場合に省略記号用の列を追加する。
+                If elised Then
+                    Dim dummyCol As ErColumun
+                    
+                    Set dummyCol = New ErColumun
+                    Call dummyCol.setData(9999, "...", "...", "", "")
+                    Call tblObj.addColObj(dummyCol)
+                End If
+                
+                Set newTables(i) = tblObj
+            Else
+                ' 主キー、関連を持たない場合
+                Set newTables(i) = m_Tables(i)
+            End If
+        Next
+        
+        m_Tables = newTables
+        
+    End If
+
+    
+    ' テーブル単位の図の作成
     For i = LBound(m_Tables) To UBound(m_Tables)
         preTop = top
         Call builder.createTable(erdInfo.mode, left, top, m_Tables(i))
@@ -470,8 +533,8 @@ Public Sub drawERD(ByRef sheet As Excel.Worksheet, erdInfo As ERDInformation)
         End If
     Next
     
+    ' リレーションの作成
     If Util.intToBool(m_Settings.getOutputRelation) Then
-        Dim j           As Integer
         Dim parent      As String
         Dim isDepend    As Boolean
         

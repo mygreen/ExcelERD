@@ -50,9 +50,9 @@ Option Explicit
 Public Const APP_NAME           As String = "ExcelERD"
 Public Const APP_TITLE          As String = "ExcelERD"
 Public Const APP_MAJOR_VER      As Integer = 1
-Public Const APP_MINOR_VER      As Integer = 1
+Public Const APP_MINOR_VER      As Integer = 2
 Public Const APP_RIVISION       As Integer = 0
-Public Const APP_LAST_MODEFIED  As String = "2015/09/02 13:00:00 "
+Public Const APP_LAST_MODEFIED  As String = "2015/09/02 15:00:00 "
 Public Const APP_COPY_RIGHT     As String = "Copyright(C) 2005-2015 YAGI Hiroto, mygreen All Rights Reserved"
 Public Const APP_AUTHOR_MAIL    As String = "YAGI Hiroto : piroto@a-net.email.ne.jp"
 Public Const APP_AUTHOR_MAIL2   As String = "mygreen : https://github.com/mygreen/ExcelERD/issues"
@@ -123,6 +123,7 @@ Public Const MSG_DDL_OUTPUTDIR_SELECT       As String = "DDLを出力するフォルダを
 ' Control Tips
 Public Const TIPS_MODEL_KIND                As String = "出力するER図の種類を選択してください"
 Public Const TIPS_RELATION                  As String = "リレーションを出力する場合チェックをONにしてください"
+Public Const TIPS_ELISION                   As String = "主キー、外部キー以外を省略する場合はチェックをONにしてください"
 Public Const TIPS_DATATYPEFILE              As String = "ODBCのデータ型とDBMSのデータ型のマッピング設定ファイルを指定します"
 
 

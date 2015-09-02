@@ -70,6 +70,7 @@ Private Const DEFAULT_ODBC_DATATYPEFILE         As String = ""
 'USER INTERFACE DEFAULT SETTINGS
 Private Const DEFAULT_MODEL_MODE                As Integer = 0
 Private Const DEFAULT_OUTPUT_RELATION           As Integer = 1
+Private Const DEFAULT_OUTPUT_ELISION            As Integer = 0
 
 '********** KEY SETTINGS **********
 'DDL KEY SETTINGS
@@ -109,6 +110,7 @@ Private Const KEY_ODBC_DATATYPEFILE             As String = "ODBC_DATATYPEFILE"
 'USER INTERFACE KEY SETTINGS
 Private Const KEY_MODEL_MODE                    As String = "MODEL_MODE"
 Private Const KEY_OUTPUT_RELATION               As String = "OUTPUT_RELATION"
+Private Const KEY_OUTPUT_ELISION                As String = "OUTPUT_ELISION"
 
 'DDL MEMBERS
 Private m_Start_Row                     As Integer
@@ -147,6 +149,7 @@ Private m_Odbc_DatatypeFile             As String
 'USER INTERFACE
 Private m_ModelMode                     As Integer
 Private m_OutputRelation                As Integer
+Private m_OutputElision                 As Integer
 
 '
 '
@@ -266,6 +269,9 @@ Public Function loadUISettings(ByRef book As Excel.Workbook, isUseDefaultPos As 
     Call setOutputRelation(getAppSetting(book, _
         KEY_OUTPUT_RELATION, _
         DEFAULT_OUTPUT_RELATION))
+    Call setOutputElision(getAppSetting(book, _
+        KEY_OUTPUT_ELISION, _
+        DEFAULT_OUTPUT_ELISION))
     
 End Function
 '
@@ -341,6 +347,7 @@ Public Function loadUIDefaultSettings() As Long
 
     Call setModelMode(DEFAULT_MODEL_MODE)
     Call setOutputRelation(DEFAULT_OUTPUT_RELATION)
+    Call setOutputElision(DEFAULT_OUTPUT_ELISION)
     
 End Function
 '
@@ -416,6 +423,7 @@ Public Function saveUISettings(ByRef book As Excel.Workbook) As Long
 
     Call setAppSetting(book, KEY_MODEL_MODE, getModelMode())
     Call setAppSetting(book, KEY_OUTPUT_RELATION, getOutputRelation())
+    Call setAppSetting(book, KEY_OUTPUT_ELISION, getOutputElision())
     
 End Function
 
@@ -609,6 +617,12 @@ Public Sub setOutputRelation(newVal As Integer)
 End Sub
 Public Function getOutputRelation() As Integer
     getOutputRelation = m_OutputRelation
+End Function
+Public Sub setOutputElision(newVal As Integer)
+    m_OutputElision = newVal
+End Sub
+Public Function getOutputElision() As Integer
+    getOutputElision = m_OutputElision
 End Function
 
 
