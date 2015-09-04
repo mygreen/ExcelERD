@@ -21,7 +21,7 @@
 		<!-- マニュアルのコピー -->
 		<mkdir dir="${package.dir}/${target.dir}/manual" />
 		<copy todir="${package.dir}/${target.dir}/manual">
-			<fileset dir="manual"/>
+			<fileset dir="manual" excludes="**/*.pptx" />
 		</copy>
 		
 		<!-- 圧縮 -->
