@@ -39,12 +39,14 @@ Private Const FOREIGN_KEY   As String = "FOREIGN KEY"
 Private Const DEFAULT       As String = "DEFAULT"
 Private Const ALTER_TABLE   As String = "ALTER TABLE"
 Private Const ADD           As String = "ADD"
+Private Const COMMENT_TABLE As String = "COMMENT ON TABLE"
+Private Const COMMENT_COLUMN As String = "COMMENT ON COLUMN"
 
 '
 ' 指定されたファイルにDDLを出力する
 '
 Public Function wirteDDL(fileName As String, tables() As ErTable, ddlInfo As DDLInformation, _
-                        Optional isOutputRelation)
+                        Optional isOutputRelation, Optional isOutputLogicalName)
                         
     On Error GoTo errhandler
     
@@ -60,6 +62,7 @@ Public Function wirteDDL(fileName As String, tables() As ErTable, ddlInfo As DDL
     Dim j               As Integer
     Dim k               As Integer
     Dim selDir          As String
+    Dim sepStr          As String
     
     refListCnt = 0
     ReDim Preserve refListAry(refListCnt)
@@ -164,6 +167,31 @@ Public Function wirteDDL(fileName As String, tables() As ErTable, ddlInfo As DDL
                 Call fu.println(ddlInfo.sepStr)
             End If
             Call fu.println("")
+            
+            '論理名をコメントとして出力
+            If isOutputLogicalName Then
+                If Not Util.isBlank(tables(i).getTableName(ERDMODE.Logical)) Then
+                    Call fu.println(COMMENT_TABLE & " " & tableName & " IS '" & Util.escapeSql(tables(i).getTableName(ERDMODE.Logical)) & "'")
+                    If Not Util.isBlank(ddlInfo.sepStr) Then
+                        Call fu.println(ddlInfo.sepStr)
+                    End If
+                End If
+                
+                For j = 0 To tables(i).getColCount - 1
+                    Set col = tables(i).getColumn(j)
+                    
+                    If Not Util.isBlank(col.getLogicName()) Then
+                        Call fu.println(COMMENT_COLUMN & " " & tableName & "." & col.getPhysicName() & " IS '" & Util.escapeSql(col.getLogicName()) & "'")
+                        If Not Util.isBlank(ddlInfo.sepStr) Then
+                            Call fu.println(ddlInfo.sepStr)
+                        End If
+                    End If
+                
+                Next
+                
+                Call fu.println("")
+            End If
+            
             
         End If
     Next

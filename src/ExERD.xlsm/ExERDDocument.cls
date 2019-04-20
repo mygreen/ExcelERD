@@ -380,7 +380,10 @@ Public Sub writeDDL(ByRef fileName As String, ByRef ddlInfo As DDLInformation)
     Dim isOutputRelation As Boolean
     isOutputRelation = Util.intToBool(m_Settings.getOutputRelation)
     
-    Call writer.wirteDDL(fileName, m_Tables, ddlInfo, isOutputRelation)
+    Dim isOutputLogicalName As Boolean
+    isOutputLogicalName = Util.intToBool(m_Settings.getDDLOutputLogicalName)
+    
+    Call writer.wirteDDL(fileName, m_Tables, ddlInfo, isOutputRelation, isOutputLogicalName)
 
 finally:
     Call Log.info("<<<<< DDL‚Ìo—Í‚ðŠ®—¹‚µ‚Ü‚µ‚½")

@@ -633,9 +633,15 @@ Private Sub setDDLOutputSettings(newProp As Settings)
         txtSepStr.text = .getDDLSeqStr
         txtComment.text = .getDDLCommentStr
         
+        If .getDDLOutputLogicalName = 1 Then
+            chkDDLLogicalName = True
+        End If
+        
+        
         If .getDDLOpenNodepad = 1 Then
             chkDDLOpenWithNotepad = True
         End If
+        
         
     End With
     Call setStetusMsg("")
@@ -847,6 +853,7 @@ Private Sub saveDDLOutputSetting()
     
     Dim outRel As Integer
     Dim ddlOpenNotepad As Integer
+    Dim ddlOutputLogicalName As Integer
     
     outRel = 1
     If chkDDLRelation.Value = False Then
@@ -866,6 +873,12 @@ Private Sub saveDDLOutputSetting()
         ddlOpenNotepad = 0
     End If
     Call prop.setDDLOpenNodepad(ddlOpenNotepad)
+    
+    ddlOutputLogicalName = 1
+    If chkDDLLogicalName.Value = False Then
+        ddlOutputLogicalName = 0
+    End If
+    Call prop.setDDLOutputLogicalName(ddlOutputLogicalName)
     
     
     Call prop.saveDDLOutputSettings(ThisWorkbook)

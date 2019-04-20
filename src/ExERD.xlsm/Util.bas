@@ -482,6 +482,13 @@ Public Function isContainArray(str As String, strAry() As String) As Boolean
     Exit Function
 End Function
 
+'
+'SQLの文字列をエスケープする
+'
+Public Function escapeSql(str As String) As String
+    escapeSql = Replace(str, "'", "''")
+End Function
+
 ' 2014/03/01 tatsuo.tsuchie
 '
 ' 書き込み可能なフォルダかどうか検査する

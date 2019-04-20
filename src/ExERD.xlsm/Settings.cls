@@ -63,6 +63,7 @@ Private Const DEFAULT_DDL_OUTPUT_FILE           As String = "ExERD_DDL.sql"
 Private Const DEFAULT_DDL_SEP_STR               As String = "/"
 Private Const DEFAULT_DDL_COMMENT_STR           As String = "--"
 Private Const DEFAULT_DDL_OPEN_NOTEPAD          As Integer = 1
+Private Const DEFAULT_DDL_OUTPUT_LOGICAL_NAME   As Integer = 1
 
 'ODBC REVERSE SETTINGS
 Private Const DEFAULT_ODBC_DATATYPEFILE         As String = ""
@@ -103,6 +104,7 @@ Private Const KEY_DDL_OUTPUT_FILE               As String = "DDL_OUTPUT_FILE"
 Private Const KEY_DDL_SEP_STR                   As String = "DDL_SEP_STR"
 Private Const KEY_DDL_COMMENT_STR               As String = "DDL_COMMENT_STR"
 Private Const KEY_DDL_OPEN_NOTEPAD              As String = "DDL_OPEN_NOTEPAD"
+Private Const KEY_DDL_OUTPUT_LOGICAL_NAME       As String = "DDL_OUTPUT_LOGICAL_NAME"
 
 'ODBC REVERSE KEY SETTINGS
 Private Const KEY_ODBC_DATATYPEFILE             As String = "ODBC_DATATYPEFILE"
@@ -142,6 +144,7 @@ Private m_DDLOutputFile                 As String
 Private m_DDLSeqStr                     As String
 Private m_DDLCommentStr                 As String
 Private m_DDLOpenNotepad                As Integer
+Private m_DDLOutputLogicalName          As Integer
 
 'ODBC REVERSE
 Private m_Odbc_DatatypeFile             As String
@@ -246,6 +249,9 @@ Public Function loadDDLOutputSettings(ByRef book As Excel.Workbook, isUseDefault
     Call setDDLOpenNodepad(getAppSetting(book, _
         KEY_DDL_OPEN_NOTEPAD, _
         DEFAULT_DDL_OPEN_NOTEPAD))
+    Call setDDLOutputLogicalName(getAppSetting(book, _
+        KEY_DDL_OUTPUT_LOGICAL_NAME, _
+        DEFAULT_DDL_OUTPUT_LOGICAL_NAME))
     
 End Function
 '
@@ -330,6 +336,7 @@ Public Function loadDDLOutputDefaultSettings() As Long
     Call setDDLSepStr(DEFAULT_DDL_SEP_STR)
     Call setDDLCommentStr(DEFAULT_DDL_COMMENT_STR)
     Call setDDLOpenNodepad(DEFAULT_DDL_OPEN_NOTEPAD)
+    Call setDDLOutputLogicalName(DEFAULT_DDL_OUTPUT_LOGICAL_NAME)
     
 End Function
 '
@@ -405,6 +412,7 @@ Public Function saveDDLOutputSettings(ByRef book As Excel.Workbook) As Long
     Call setAppSetting(book, KEY_DDL_COMMENT_STR, getDDLCommentStr())
     Call setAppSetting(book, KEY_OUTPUT_RELATION, getOutputRelation())
     Call setAppSetting(book, KEY_DDL_OPEN_NOTEPAD, getDDLOpenNodepad())
+    Call setAppSetting(book, KEY_DDL_OUTPUT_LOGICAL_NAME, getDDLOutputLogicalName())
     
 End Function
 '
@@ -590,13 +598,22 @@ Public Function getDDLCommentStr() As String
     getDDLCommentStr = m_DDLCommentStr
 End Function
 
-'add tastuo: ddl open as notepad
+'add tatsuo: ddl open as notepad
 Public Sub setDDLOpenNodepad(newVal As Integer)
     m_DDLOpenNotepad = newVal
 End Sub
 Public Function getDDLOpenNodepad() As Integer
     getDDLOpenNodepad = m_DDLOpenNotepad
 End Function
+
+'add tatsuo: ddl out logical name as comment
+Public Sub setDDLOutputLogicalName(newVal As Integer)
+    m_DDLOutputLogicalName = newVal
+End Sub
+Public Function getDDLOutputLogicalName() As Integer
+    getDDLOutputLogicalName = m_DDLOutputLogicalName
+End Function
+
 
 'ODBC
 Public Sub setOdbcDatatypeFile(newVal As String)
