@@ -180,7 +180,7 @@ Public Function wirteDDL(fileName As String, tables() As ErTable, ddlInfo As DDL
                 For j = 0 To tables(i).getColCount - 1
                     Set col = tables(i).getColumn(j)
                     
-                    If Not Util.isBlank(col.getPhysicName()) Then
+                    If Not Util.isBlank(col.getLogicName()) Then
                         Call fu.println(COMMENT_COLUMN & " " & tableName & "." & col.getPhysicName() & " IS '" & Util.escapeSql(col.getLogicName()) & "'")
                         If Not Util.isBlank(ddlInfo.sepStr) Then
                             Call fu.println(ddlInfo.sepStr)
