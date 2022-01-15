@@ -50,10 +50,10 @@ Option Explicit
 Public Const APP_NAME           As String = "ExcelERD"
 Public Const APP_TITLE          As String = "ExcelERD"
 Public Const APP_MAJOR_VER      As Integer = 1
-Public Const APP_MINOR_VER      As Integer = 3
+Public Const APP_MINOR_VER      As Integer = 4
 Public Const APP_RIVISION       As Integer = 0
-Public Const APP_LAST_MODEFIED  As String = "2019/04/20 14:00:00 "
-Public Const APP_COPY_RIGHT     As String = "Copyright(C) 2005-2019 YAGI Hiroto, mygreen All Rights Reserved"
+Public Const APP_LAST_MODEFIED  As String = "2022/01/15 12:14:00 "
+Public Const APP_COPY_RIGHT     As String = "Copyright(C) 2005-2022 YAGI Hiroto, mygreen All Rights Reserved"
 Public Const APP_AUTHOR_MAIL    As String = "YAGI Hiroto : piroto@a-net.email.ne.jp"
 Public Const APP_AUTHOR_MAIL2   As String = "mygreen : https://github.com/mygreen/ExcelERD/issues"
 
