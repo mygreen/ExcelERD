@@ -7,7 +7,7 @@ http://typea.info/tools/exerd/manual/
 
 主な変更点は以下の通り。
 - Excel2007以上に対応。
-  - Excel2007/2010で動作確認しています。
+  - Excel2007/2010/2016で動作確認しています。
 - ER図を出力する際のオプションを追加。
   - 物理名・論理名の同時出力対応。
 
@@ -17,7 +17,7 @@ Apache2.0
 
 ## 使い方
 
-https://mygreen.github.com/ExcelERD/index.html
+http://mygreen.github.io/ExcelERD/
 
 # ソースの管理方法
 
