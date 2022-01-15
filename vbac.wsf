@@ -14,7 +14,7 @@ The Project Page: https://github.com/vbaidiot/Ariawase
 <example></example>
 </runtime>
 <resource id="HelpMessage">
-vbac (version 0.6.0)
+vbac (version 0.9.0)
 
 Usage: cscript vbac.wsf &lt;command&gt; [&lt;options&gt;]
 
@@ -48,8 +48,12 @@ var wdFormatXMLTemplateMacroEnabled = 15 //.dotm
 // XlFileFormat
 var xlExcel9795 = 43; //.xls 97-2003 format in Excel 2003 or prev
 var xlExcel8    = 56; //.xls 97-2003 format in Excel 2007
+var xlTemplate  = 17; //.xlt
+var xlAddIn     = 18; //.xla
 var xlExcel12   = 50; //.xlsb
 var xlOpenXMLWorkbookMacroEnabled = 52; //.xlsm
+var xlOpenXMLTemplateMacroEnabled = 53; //.xltm
+var xlOpenXMLAddIn                = 55; //.xlam
 
 // AcNewDatabaseFormat
 var acNewDatabaseFormatAccess2000 =  9; //.mdb
@@ -506,7 +510,7 @@ Word.prototype.progID1 = "Word";
 Word.prototype.createOpenFile = function(wdApp, path) {
     var wdSaveFormat;
     var vernum = parseInt(wdApp.Version);
-    switch (fso.GetExtensionName(path)) {
+    switch (fso.GetExtensionName(path).toLowerCase()) {
     case 'doc':  wdSaveFormat = wdFormatDocument97;
                  break;
     case 'dot':  wdSaveFormat = wdFormatTemplate97;
@@ -591,20 +595,24 @@ Excel.prototype.progID1 = "Excel";
 Excel.prototype.createOpenFile = function(xlApp, path) {
     var xlFileFormat;
     var vernum = parseInt(xlApp.Version);
-    switch (fso.GetExtensionName(path)) {
-    case 'xls':  case 'xla':  case 'xlt':
-        xlFileFormat = (vernum < 12) ? xlExcel9795 : xlExcel8;
-        break;
-    case 'xlsb':
-        xlFileFormat = xlExcel12;
-        break;
-    case 'xlsm': case 'xlam': case 'xltm':
-        xlFileFormat = xlOpenXMLWorkbookMacroEnabled;
-        break;
-    default:
-        xlFileFormat = (vernum < 12) ? xlExcel9795 : xlOpenXMLWorkbookMacroEnabled;
-        path        += (vernum < 12) ? '.xls'      : '.xlsm';
-        break;
+    switch (fso.GetExtensionName(path).toLowerCase()) {
+    case 'xls':  xlFileFormat = (vernum < 12) ? xlExcel9795 : xlExcel8;
+                 break;
+    case 'xlt':  xlFileFormat = xlTemplate;
+                 break;
+    case 'xla':  xlFileFormat = xlAddIn;
+                 break;
+    case 'xlsb': xlFileFormat = xlExcel12;
+                 break;
+    case 'xlsm': xlFileFormat = xlOpenXMLWorkbookMacroEnabled;
+                 break;
+    case 'xltm': xlFileFormat = xlOpenXMLTemplateMacroEnabled;
+                 break;
+    case 'xlam': xlFileFormat = xlOpenXMLAddIn;
+                 break;
+    default:     xlFileFormat = (vernum < 12) ? xlExcel9795 : xlOpenXMLWorkbookMacroEnabled;
+                 path        += (vernum < 12) ? '.xls'      : '.xlsm';
+                 break;
     }
     
     var xlBook;
@@ -614,6 +622,7 @@ Excel.prototype.createOpenFile = function(xlApp, path) {
         }
         else {
             xlBook = xlApp.Workbooks.Add();
+            xlBook.IsAddin = (xlFileFormat == xlAddIn) || (xlFileFormat == xlOpenXMLAddIn);
             xlBook.SaveAs(path, xlFileFormat);
         }
     }
@@ -693,7 +702,7 @@ Access.prototype.progID1 = "Access";
 Access.prototype.createOpenFile = function(acApp, path) {
     var dbFormat;
     var vernum = parseInt(acApp.SysCmd(acSysCmdAccessVer));
-    switch (fso.GetExtensionName(path)) {
+    switch (fso.GetExtensionName(path).toLowerCase()) {
     case 'mdb':   dbFormat = acNewDatabaseFormatAccess2000;
                   break;
     case 'accdb': dbFormat = acNewDatabaseFormatAccess2007;
@@ -1023,7 +1032,7 @@ var CommandHelper = function(param) {
     this.command = new Command(this);
 };
 CommandHelper.prototype.getAppName = function(fname) {
-    switch (fso.GetExtensionName(fname)) {
+    switch (fso.GetExtensionName(fname).toLowerCase()) {
     case 'doc': case 'dot': case 'docm': case 'dotm':
         return 'Word';
     case 'xls': case 'xlsm': case 'xla': case 'xlam': case 'xlt': case 'xltm': case 'xlsb':
