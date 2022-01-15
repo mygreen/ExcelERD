@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+    <meta http-equiv="Cotent-Type" content="application/xhtml+xml; charset=UTF-8" />
+    <meta name="author" content="YAGI Hiroto, Mygreen"/>
+    <meta name="copyright" content="(c) 2006 YAGI Hiroto, 2015 MyGreen" />
+    <meta name="date" content="2015-09-02T00:00:00+09:00"/>
+    <title>ExcelERD テーブル定義シートの作成</title>
+    <link rel="stylesheet" href="./exerd.css" type="text/css">
+<body>
+<hr>
+<table class="layout">
+  <tr>
+    <td valign="center"><img src="./img/icon.jpg" border="0"></td>
+    <td><h1>ExcelERD</h1></td>
+  </tr>
+</table>
+
+<hr>
+<h3>テーブル定義シートの作成</h3>
+<a href="./index.html#index">目次</a>
+<hr>
+<p>
+本プログラムでは、ER図を直接作成することは残念ながらできません。<br/>
+以下の手順にて、テーブル定義ワークシートを作成しそれを元にER図を作成します。
+
+(または、<a href="./03_rev.html">リバースエンジニアリング</a>を行ってください)
+</p>
+
+<h3>1. ExcelERDの起動</h3>
+  <div class="indent">
+    <p>
+      ExERD.xlsm を開いている場合、または<a href="./05_addin.html">アドインとして登録されている</a>場合、
+
+      リボンメニュー「アドイン」から下図のアイコンが表示されますので、ボタンを押下することによってExcelERDを起動します。
+
+    </p>
+    <p>
+      <img src="./img/01.png">
+    </p>
+    <p>
+      アドインとして設定している場合に、リボンメニューに表示されない場合、リボンメニュー「開発」-「アドイン」、アドインダイアログボックスにて、「Exerd」にチェックし、OKをクリックします。<br />
+      アドインとして設定する方法は、<a href="./05_addin.html">「Excelアドインとして使用する」</a>を参照してください。
+      
+    </p>
+    <p>
+      <img src="./img/11.png">
+    </p>
+    <p>
+      リボンメニュー「アドイン」にExcelERD が表示されていない場合、リボンメニュー「開発」- 「マクロ」 にて マクロウィンドウを開き、
+
+      <i>Auto_Open</i> を実行してください。
+
+    </p>
+    <p>
+      <img src="./img/19.png">
+    </p>
+  </div>
+
+<h3>2. テーブル定義シートの設定</h3>
+  <div class="indent">
+    <p>
+      「設定」タブを開き、テーブル定義シートの定義情報を設定します。
+
+    </p>
+    <p>
+      <img src="./img/02.png"><br><br>
+    </p>
+    <p>
+      このタブでは、テーブル定義シートのどの列に、どのような値を設定するかを定義します。<br/>
+      定義する値を下表に示します。
+
+    </p>
+    <p>
+      <table border="1" cellspacing="0" cellpadding="0">
+        <caption>テーブル定義シート設定内容</caption>
+        <tr>
+          <th>項目名</th>
+          <th>内容</th>
+        </tr>
+        <tr>
+          <td>開始行</td>
+          <td>データ読み込み開始行を設定してください。必須入力です。</td>
+        </tr>
+        <tr>
+          <td>オブジェクト種類</td>
+          <td>「TABLE」または「VIEW」を指定してください。未指定は「TABLE」と判断します</td>
+        </tr>
+        <tr>
+          <td>【論理】テーブル名</td>
+          <td>テーブルの論理名を設定してください。</td>
+        </tr>
+        <tr>
+          <td>【物理】テーブル名</td>
+          <td>テーブルの物理名を設定してください。</td>
+        </tr>
+        <tr>
+          <td>カラムID</td>
+          <td>列のIDを設定してください。ER図のカラムの並び順に影響します。</td>
+        </tr>
+        <tr>
+          <td>【論理】カラム名</td>
+          <td>列の論理名を設定してください。</td>
+        </tr>
+        <tr>
+          <td>【物理】カラム名</td>
+          <td>列の物理名を設定してください。</td>
+        </tr>
+        <tr>
+          <td>データ型</td>
+          <td>データ型を設定してください。</td>
+        </tr>
+        <tr>
+          <td>データ長さ(精度)</td>
+          <td>データ型に対するデータ長さを設定してください。</td>
+        </tr>
+        <tr>
+          <td>Not Null</td>
+          <td>Not Null制約の場合、Yesとしてください。(現在のER図作成プログラムにおいて意味はありません)</td>
+        </tr>
+        <tr>
+          <td>主キー</td>
+          <td>主キー項目の場合、「Yes」「Y」もしくは数値を設定してください。</td>
+        </tr>
+        <tr>
+          <td>外部キー</td>
+          <td>列が外部キーの場合、「Yes」「Y」もしくは数値を設定してください。</td>
+        </tr>
+        <tr>
+          <td>参照表(列)名</td>
+          <td>外部キーが参照するテーブル名、もしくは 「テーブル名.カラム名」 を指定してください。</td>
+        </tr>
+        <tr>
+          <td>依存</td>
+          <td>このテーブルが依存エンティティである場合「Yes」または「Y」を設定してください。</td>
+        </tr>
+        <tr>
+          <td>規定値</td>
+          <td>DEFAULT値(データ挿入時に値が指定されない場合に、規定値として設定される値)を設定してください。</td>
+        </tr>
+      </table>
+    </p>
+  </div>  
+<h3>2. テーブル定義シートの作成</h3>
+  <div class="indent">
+    <p>
+      「テーブル定義ヘッダー挿入」ボタンを押下してください。
+
+      実際に、ER図を作成する基となる、テーブルデータを記述するためのシートのヘッダーを作成します。
+
+    </p>
+    <p>
+      <ol type="i">
+        <li class="linetitle">データベース定義シートの選択</li>
+          <p>
+            テーブルデータを記述するためのシートを選択してください。<br>
+          </p>
+          <p>  
+            <img src="./img/03.jpg">
+          </p>
+          <p>  
+            ※「(新規シート)」を選択すると、新たにシートを作成します。
+
+          </p>
+        <li class="linetitle">データベース定義シートにヘッダ挿入</li>
+          <p>  
+            下図の様にヘッダのタイトルが挿入されます。<br>
+          </p>
+          <p>  
+            <img src="./img/04.jpg">
+          </p>
+        <li class="linetitle">テーブル定義の記述</li>
+          <p>  
+            上記で作成したテーブル定義のシートにあわせて、テーブルデータを記述します。<br>
+            ExERD.xlsに「SAMPLE DDL」シートがありますので参考にしてください。
+
+          </p>
+          <p>  
+            <img src="./img/05.jpg">
+          </p>
+      </ol>
+    </p>
+    <p>
+      以上で、テーブル定義シートの作成は完了です。
+
+    </p>
+  </div>
+  <br/><div style="width:100%;text-align:right;">copyright(c) 2006-2015 <a href="https://github.com/mygreen/ExcelERD" target="_blank">Mygreen</a></div>
+<hr>
+</body>
+</html>
