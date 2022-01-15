@@ -17,10 +17,10 @@ Option Explicit
 '  limitations under the License.
 '
 
-Public Declare Function SQLAllocEnv Lib "odbc32.dll" (ByRef phEnv As Long) As Integer
-Public Declare Function SQLFreeEnv Lib "odbc32.dll" (ByVal hEnv As Long) As Integer
+Public Declare PtrSafe Function SQLAllocEnv Lib "odbc32.dll" (ByRef phEnv As Long) As Integer
+Public Declare PtrSafe Function SQLFreeEnv Lib "odbc32.dll" (ByVal hEnv As Long) As Integer
 
-Public Declare Function SQLDataSources Lib "odbc32.dll" Alias "SQLDataSourcesA" ( _
+Public Declare PtrSafe Function SQLDataSources Lib "odbc32.dll" Alias "SQLDataSourcesA" ( _
     ByVal hEnv As Long, _
     ByVal fDirection As Integer, _
     ByVal szDSN As String, _
